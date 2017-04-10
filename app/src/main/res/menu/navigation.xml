@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/translate"
+        android:icon="@drawable/ic_translate_grey_24dp"
+        android:title="@string/Translator"/>
+
+    <item
+        android:id="@+id/history"
+        android:icon="@drawable/ic_history_grey_24dp"
+        android:title="@string/history">
+    </item>
+    <item
+        android:id="@+id/bookmark"
+        android:icon="@drawable/ic_bookmark_grey_24dp"
+        android:title="@string/Favorits"/>
+
+    <item
+        android:id="@+id/settings"
+        android:icon="@drawable/ic_settings_grey_24dp"
+        android:title="@string/settings"/>
+
+</menu>

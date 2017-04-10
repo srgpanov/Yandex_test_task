@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#ffdc61</color>
+    <color name="primary_dark">#e1c255</color>
+    <color name="primary_light">#FFF9C4</color>
+    <color name="accent">#607D8B</color>
+    <color name="primary_text">#000000</color>
+    <color name="secondary_text">#757575</color>
+    <color name="icons">#858e98</color>
+    <color name="divider">#BDBDBD</color>
+
+    <color name="white">#ffffff</color>
+    <color name="grey_light">#cccccc</color>
+    <color name="grey_for_icon">#858e98</color>
+    <color name="blue_for_dictionary">#4b7893</color>
+    <color name="brown_for_means">#8d634d</color>
+
+
+
+</resources>

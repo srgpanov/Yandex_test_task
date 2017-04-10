@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">>
+    <ListPreference
+        android:key="test_style"
+        android:title="Стиль для шрифта"
+        android:summary="Устанавливет стиль для шрифта"
+        android:defaultValue="1"
+        android:entries="@array/text_style"
+        android:entryValues="@array/text_style"
+        android:dialogTitle="Выберите задержку до перевода"/>
+</PreferenceScreen>
