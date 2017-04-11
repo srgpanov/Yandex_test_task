@@ -112,4 +112,6 @@
     <string name="permission_warning">Разрешить использовать микрофон?</string>
     <string name="allow">Разрешить</string>
     <string name="permission_not_allow">Разрешение на запись не получено</string>
+    <string name="english">Английский</string>
+    <string name="russian">Русский</string>
 </resources>

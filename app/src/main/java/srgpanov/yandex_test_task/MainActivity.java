@@ -7,7 +7,6 @@ import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.DisplayMetrics;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -26,16 +25,14 @@ import static srgpanov.yandex_test_task.Utils.ConstantManager.CODE_GET_LANG_INPU
 import static srgpanov.yandex_test_task.Utils.ConstantManager.CODE_GET_LANG_OUTPUT;
 import static srgpanov.yandex_test_task.Utils.ConstantManager.KEY_API_SPEECHKIT;
 
-public class MainActivity extends AppCompatActivity  {
+public class MainActivity extends AppCompatActivity {
 
 
-    private String mLanguge;
     private Toolbar mToolbarTranslate;
     private Toolbar mToolbarHistory;
     private Toolbar mToolbarBookmark;
 
     private TextView mToolbarLeftTextView;
-
     private TextView mToolbarRightTextView;
     private ImageView mToolbarImageView;
     private FragmentManager mFragmentManager;
@@ -84,6 +81,7 @@ public class MainActivity extends AppCompatActivity  {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setupToolbar();
+
         mFragmentManager = getSupportFragmentManager();
         mTranslateFragment = new TranslateFragment();
         mHistoryFragment = new HistoryFragment();
@@ -98,10 +96,15 @@ public class MainActivity extends AppCompatActivity  {
         RealmConfiguration config = new RealmConfiguration.Builder().build();
         Realm.setDefaultConfiguration(config);
 
-        SpeechKit.getInstance().configure(getApplicationContext(),KEY_API_SPEECHKIT);
+        SpeechKit.getInstance().configure(getApplicationContext(), KEY_API_SPEECHKIT);
 
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
     private void setupToolbar() {
@@ -110,6 +113,7 @@ public class MainActivity extends AppCompatActivity  {
         mToolbarBookmark = (Toolbar) findViewById(R.id.toolbar_bookmark);
         mToolbarLeftTextView = (TextView) mToolbarTranslate.findViewById(R.id.toolbar_left_txt_view);
         mToolbarRightTextView = (TextView) mToolbarTranslate.findViewById(R.id.toolbar_right_txt_view);
+
         mToolbarImageView = (ImageView) mToolbarTranslate.findViewById(R.id.toolbar_img_view);
         mToolbarLeftTextView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -143,12 +147,15 @@ public class MainActivity extends AppCompatActivity  {
             if (resultCode == RESULT_OK) {
                 String lang = data.getStringExtra("lang");
                 mToolbarLeftTextView.setText(lang);
+
+
             }
         }
         if (requestCode == CODE_GET_LANG_OUTPUT) {
             if (resultCode == RESULT_OK) {
                 String lang = data.getStringExtra("lang");
                 mToolbarRightTextView.setText(lang);
+
             }
         }
     }

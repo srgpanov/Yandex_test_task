@@ -1,5 +1,7 @@
 package srgpanov.yandex_test_task.Utils;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -18,5 +20,30 @@ public class Utils {
                 return result;
             }
         }
+    }
+    public static boolean isMoreTwoWords(String text){
+
+        boolean truth =true;
+        List<String> strings=Arrays.asList(text.trim().split(" "));
+        if(strings.size()>2)truth =false;
+        return truth;
+    }
+    public static String translatePos(String text){
+        switch (text){
+            case "noun": return "сущ";
+            case "verb": return "гл";
+            case "adjective": return "прил";
+            case "adverb": return "нареч";
+            case "pronoun": return "мест";
+            case "preposition": return "предл";
+            case "conjunction": return "союз";
+            case "interjection": return "межд";
+            case "participle": return "прич";
+            case "adverbial participle": return "дееприч";
+
+            default:return text;
+        }
+
+
     }
 }

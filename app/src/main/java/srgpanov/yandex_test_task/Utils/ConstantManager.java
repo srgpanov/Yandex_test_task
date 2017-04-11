@@ -10,6 +10,13 @@ public interface ConstantManager {
     String KEY_API_DICT = "dict.1.1.20170409T185108Z.79d5015c882fb26d.aca756c619f2b0d51e86ce223f31aa23add5ae9c";
     String BASE_TRANSLATE_URL = "https://translate.yandex.net/api/v1.5/tr.json/";
     String BASE_DICT_URL = "https://dictionary.yandex.net/api/v1/dicservice.json/";
+
+    String APP_PREFERENCES = "mysettings";
+
+    String TOOLBAR_LEFT_TEXT_VIEW = "lefttxtview";
+    String TOOLBAR_RIGHT_TEXT_VIEW = "righttxtview";
+    String INPUT_TEXT_VIEW = "inputtxtview";
+    String OUTPUT_TEXT_VIEW = "outputtxtview";
     int CODE_GET_LANG_INPUT = 100;
     int CODE_GET_LANG_OUTPUT = 101;
     int REQUEST_PERMISSION_CODE_RECORD_AUDIO = 102;
