@@ -22,10 +22,9 @@ public class Utils {
         }
     }
     public static boolean isMoreTwoWords(String text){
-
-        boolean truth =true;
+        boolean truth =false;
         List<String> strings=Arrays.asList(text.trim().split(" "));
-        if(strings.size()>2)truth =false;
+        if(strings.size()>2)truth =true;
         return truth;
     }
     public static String translatePos(String text){
@@ -43,7 +42,6 @@ public class Utils {
 
             default:return text;
         }
-
-
     }
+
 }

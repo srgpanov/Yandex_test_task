@@ -1,24 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:app="http://schemas.android.com/apk/res-auto"
                 android:id="@+id/history_container"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
-
-
-
-    <android.support.v7.widget.SearchView
-        android:id="@+id/search_view_history"
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/appbar_layout_history"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:queryHint="@string/search_view_history_hint"/>
-
+        android:fitsSystemWindows="false">
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar_history"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/primary"
+            app:layout_collapseMode = "pin"
+            app:title="@string/history"/>
+    </android.support.design.widget.AppBarLayout>
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view_history"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/search_view_history"
+        android:layout_below="@id/appbar_layout_history"
         android:paddingLeft="@dimen/spacing_small_8"
         android:paddingRight="@dimen/spacing_small_8"/>
 </RelativeLayout>

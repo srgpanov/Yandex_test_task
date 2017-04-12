@@ -114,4 +114,8 @@
     <string name="permission_not_allow">Разрешение на запись не получено</string>
     <string name="english">Английский</string>
     <string name="russian">Русский</string>
+    <string name="choose_lang_activity">Выбор языка</string>
+    <string name="menu_search">Поиск</string>
+    <string name="query_hint">Найти</string>
+    <string name="toolbar_setting">Настройки</string>
 </resources>

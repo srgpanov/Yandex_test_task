@@ -11,7 +11,10 @@ public interface ConstantManager {
     String BASE_TRANSLATE_URL = "https://translate.yandex.net/api/v1.5/tr.json/";
     String BASE_DICT_URL = "https://dictionary.yandex.net/api/v1/dicservice.json/";
 
-    String APP_PREFERENCES = "mysettings";
+    String FRAGMENT_TRANSLATE = "translate";
+    String FRAGMENT_HISTORY = "history";
+    String FRAGMENT_FAVORITS = "favorits";
+    String FRAGMENT_SETTING = "setting";
 
     String TOOLBAR_LEFT_TEXT_VIEW = "lefttxtview";
     String TOOLBAR_RIGHT_TEXT_VIEW = "righttxtview";

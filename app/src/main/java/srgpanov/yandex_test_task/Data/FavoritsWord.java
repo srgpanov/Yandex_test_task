@@ -4,25 +4,17 @@ import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
 
 /**
- * Created by Пан on 30.03.2017.
+ * Created by Пан on 12.04.2017.
  */
 
-public class TranslatedWords extends RealmObject {
+public class FavoritsWord extends RealmObject {
     @PrimaryKey
     private int Id;
     private String InputText;
     private String TranslatedText;
     private String DirectionTranslation;
     private boolean Favorits;
-    private FavoritsWord mFavoritsWord;
-
-    public FavoritsWord getFavoritsWord() {
-        return mFavoritsWord;
-    }
-
-    public void setFavoritsWord(FavoritsWord favoritsWord) {
-        mFavoritsWord = favoritsWord;
-    }
+    private TranslatedWords historyWords;
 
     public int getId() {
         return Id;
@@ -63,5 +55,12 @@ public class TranslatedWords extends RealmObject {
     public void setFavorits(boolean favorits) {
         Favorits = favorits;
     }
-}
 
+    public TranslatedWords getHistoryWords() {
+        return historyWords;
+    }
+
+    public void setHistoryWords(TranslatedWords historyWords) {
+        this.historyWords = historyWords;
+    }
+}

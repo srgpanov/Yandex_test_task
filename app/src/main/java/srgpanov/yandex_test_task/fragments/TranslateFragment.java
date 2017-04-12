@@ -3,6 +3,7 @@ package srgpanov.yandex_test_task.fragments;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -12,20 +13,20 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.Fragment;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.util.ArrayMap;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.DisplayMetrics;
-import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -45,11 +46,14 @@ import ru.yandex.speechkit.RecognizerListener;
 import ru.yandex.speechkit.Synthesis;
 import ru.yandex.speechkit.Vocalizer;
 import ru.yandex.speechkit.VocalizerListener;
+import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
+import srgpanov.yandex_test_task.InputLangActivity;
 import srgpanov.yandex_test_task.R;
 import srgpanov.yandex_test_task.Utils.AvailableLanguages;
 import srgpanov.yandex_test_task.Utils.ConstantManager;
 import srgpanov.yandex_test_task.Utils.Utils;
+import srgpanov.yandex_test_task.YandexAplication;
 import srgpanov.yandex_test_task.YandexEditText;
 import srgpanov.yandex_test_task.network.RetroClient;
 import srgpanov.yandex_test_task.network.YandexDictApi;
@@ -58,20 +62,23 @@ import srgpanov.yandex_test_task.network.res.LookUpResponse;
 import srgpanov.yandex_test_task.network.res.TranslateResponse;
 
 import static android.Manifest.permission.RECORD_AUDIO;
+import static android.app.Activity.RESULT_OK;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static srgpanov.yandex_test_task.Utils.ConstantManager.CODE_GET_LANG_INPUT;
+import static srgpanov.yandex_test_task.Utils.ConstantManager.CODE_GET_LANG_OUTPUT;
 
 
 /**
  * Created by Пан on 27.03.2017.
  */
 
-public class TranslateFragment extends Fragment implements VocalizerListener, RecognizerListener {
+public class TranslateFragment extends android.app.Fragment implements VocalizerListener, RecognizerListener {
 
 
     private int mTimeToTranslate = 3;
     //region views
     private TextView mTranslateOutputTextView;
-    private EditText mTranslateInputEditText;
+    private YandexEditText mTranslateInputEditText;
     private ImageView mMic;
     private ImageView mClear;
     private ImageView mInputSpeaker;
@@ -79,40 +86,115 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
     private ImageView mBookamark;
     private ImageView mShare;
     private ImageView mCopy;
+    private TextView mToolbarLeftTextView;
+    private TextView mToolbarRightTextView;
+    private ImageView mToolbarImageView;
     private RelativeLayout mTranslateContainer;
     private RelativeLayout mDictionaryContainer;
+    private Toolbar mTranslateToolbar;
     //endregion
+    private SharedPreferences mPreferences;
     private Realm mRealm;
     private Timer mTimer;
     private Vocalizer mVocalizer;
     private Recognizer mRecognizer;
 
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mRealm = Realm.getDefaultInstance();
+
+        mPreferences = YandexAplication.getPreferences();
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        mRealm = Realm.getDefaultInstance();
         View rootView = inflater.inflate(R.layout.fragment_translate, container, false);
+        mTranslateToolbar = (Toolbar) rootView.findViewById(R.id.layout_toolbar_translate);
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
+        activity.setSupportActionBar(mTranslateToolbar);
+        ActionBar actionBar = activity.getSupportActionBar();
+        actionBar.setDisplayShowTitleEnabled(false);
+        actionBar.setDisplayShowCustomEnabled(true);
         mTranslateContainer = (RelativeLayout) rootView.findViewById(R.id.translate_container);
         mDictionaryContainer = (RelativeLayout) rootView.findViewById(R.id.dictionary_container);
         setupButtons(rootView);
         setupTextViews(rootView);
+        setupToolbar(rootView);
 
         return rootView;
+    }
+
+    private void setupToolbar(View rootview) {
+        mToolbarLeftTextView = (TextView) rootview.findViewById(R.id.toolbar_left_txt_view);
+        mToolbarRightTextView = (TextView) rootview.findViewById(R.id.toolbar_right_txt_view);
+        mToolbarImageView = (ImageView) rootview.findViewById(R.id.toolbar_img_view);
+        mToolbarLeftTextView.setText(mPreferences.getString(ConstantManager.TOOLBAR_LEFT_TEXT_VIEW, getResources().getString(R.string.english)));
+        mToolbarRightTextView.setText(mPreferences.getString(ConstantManager.TOOLBAR_RIGHT_TEXT_VIEW, getResources().getString(R.string.russian)));
+        mToolbarLeftTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), InputLangActivity.class);
+                startActivityForResult(intent, CODE_GET_LANG_INPUT);
+            }
+        });
+        mToolbarRightTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(getActivity(), InputLangActivity.class);
+                startActivityForResult(intent, CODE_GET_LANG_OUTPUT);
+            }
+        });
+        mToolbarImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String tempLangauge;
+                tempLangauge = mToolbarLeftTextView.getText().toString();
+                mToolbarLeftTextView.setText(mToolbarRightTextView.getText().toString());
+                mToolbarRightTextView.setText(tempLangauge);
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putString(ConstantManager.TOOLBAR_LEFT_TEXT_VIEW, mToolbarLeftTextView.getText().toString());
+                editor.putString(ConstantManager.TOOLBAR_RIGHT_TEXT_VIEW, mToolbarRightTextView.getText().toString());
+                editor.apply();
+                swapTranslatedText();
+                lookInDictionary(mTranslateInputEditText.getText().toString(), tempLangauge);
+            }
+        });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CODE_GET_LANG_INPUT) {
+            if (resultCode == RESULT_OK) {
+                String lang = data.getStringExtra("lang");
+                mToolbarLeftTextView.setText(lang);
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putString(ConstantManager.TOOLBAR_LEFT_TEXT_VIEW, mToolbarLeftTextView.getText().toString());
+                editor.apply();
+
+            }
+        }
+        if (requestCode == CODE_GET_LANG_OUTPUT) {
+            if (resultCode == RESULT_OK) {
+                String lang = data.getStringExtra("lang");
+                mToolbarRightTextView.setText(lang);
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putString(ConstantManager.TOOLBAR_RIGHT_TEXT_VIEW, mToolbarRightTextView.getText().toString());
+                editor.apply();
+            }
+        }
     }
 
     @Override
     public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
         super.onViewStateRestored(savedInstanceState);
+        Toast.makeText(getActivity(), "onViewStateRestored", Toast.LENGTH_SHORT).show();
         if (savedInstanceState != null) {
             mTranslateInputEditText.setText(savedInstanceState.getString(ConstantManager.INPUT_TEXT_VIEW));
             mTranslateOutputTextView.setText(savedInstanceState.getString(ConstantManager.OUTPUT_TEXT_VIEW));
-            Toast.makeText(getContext(), "Restore", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), "Restore", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -121,6 +203,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
         super.onSaveInstanceState(outState);
         outState.putString(ConstantManager.INPUT_TEXT_VIEW, mTranslateInputEditText.getText().toString());
         outState.putString(ConstantManager.OUTPUT_TEXT_VIEW, mTranslateOutputTextView.getText().toString());
+        Toast.makeText(getActivity(), "out", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -133,11 +216,13 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
 
         resetRecognizer();
         resetVocalizer();
+
     }
 
+
     @Override
-    public void onDestroy() {
-        super.onDestroy();
+    public void onDestroyView() {
+        super.onDestroyView();
         mRealm.close();
     }
 
@@ -163,7 +248,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
         } else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
-                    Toast.makeText(getContext(), R.string.permission_not_allow, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), R.string.permission_not_allow, Toast.LENGTH_SHORT).show();
 
                 } else {
                     Snackbar.make(mTranslateContainer, R.string.permission_warning, Snackbar.LENGTH_LONG)
@@ -177,6 +262,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
             }
         }
     }
+
 
     private void setupTextViews(View rootView) {
         mTranslateOutputTextView = (TextView) rootView.findViewById(R.id.output_txt_view);
@@ -210,15 +296,15 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
                 mTimer = new Timer();
                 final String inputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_left_txt_view)).getText().toString();
                 final String outputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_right_txt_view)).getText().toString();
+                final AvailableLanguages availableLanguages = new AvailableLanguages(getActivity());
                 //создаём таймер, в кооторый стартует если пользователь не вводит текст 3 секунды
                 //TODO: при переключении фрагмента падает приложение
                 mTimer.schedule(new TimerTask() {
                     @Override
                     public void run() {
                         if (!TextUtils.isEmpty(e.toString())) {
-                            translateText(e.toString(), langaugeToAbbreviations(inputLangauge, outputLangauge)); // перевод текста и запись в базу данных запускается в отдельном потоке
-                            if (Utils.isMoreTwoWords(e.toString()))
-                                lookInDictionary(e.toString(), langaugeToAbbreviations(inputLangauge, outputLangauge));
+                            translateText(e.toString(), availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge)); // перевод текста и запись в базу данных запускается в отдельном потоке
+                            lookInDictionary(e.toString(), availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge));
                         }
                     }
                 }, mTimeToTranslate * 1000);
@@ -273,7 +359,11 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
         mBookamark.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                addToFavorits();
+                String inputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_left_txt_view)).getText().toString();
+                String outputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_right_txt_view)).getText().toString();
+                AvailableLanguages availableLanguages = new AvailableLanguages(getActivity());
+                TranslatedWords words;
+                addToDb(mTranslateInputEditText.getText().toString(), mTranslateOutputTextView.getText().toString(), availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge), true);
                 //// TODO: 08.04.2017  make yellow icon after click
 
             }
@@ -281,14 +371,14 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
         mShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getContext(), "share", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "share", Toast.LENGTH_SHORT).show();
             }
         });
         mCopy.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                Toast.makeText(getContext(), "copy", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "copy", Toast.LENGTH_SHORT).show();
 
             }
         });
@@ -313,7 +403,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
                     params_def.addRule(RelativeLayout.BELOW, defLastId);
                 }
                 String defString = body.getDef().get(i).getText();
-                TextView defTextView = new TextView(getContext());
+                TextView defTextView = new TextView(getActivity());
                 defTextView.setText(defString);
                 defTextView.setPadding(0, dpToPx(8), 0, 0);
                 defTextView.setTextColor(getResources().getColor(R.color.primary_text));
@@ -332,7 +422,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
                     RelativeLayout.LayoutParams params_ts = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
                     params_ts.addRule(RelativeLayout.RIGHT_OF, defLastId);
                     params_ts.addRule(RelativeLayout.ALIGN_BOTTOM, defLastId);
-                    TextView tsTextView = new TextView(getContext());
+                    TextView tsTextView = new TextView(getActivity());
                     tsTextView.setText("[" + body.getDef().get(i).getTs() + "]");
                     tsTextView.setPadding(dpToPx(8), dpToPx(8), 0, 0);
                     tsTextView.setTextColor(getResources().getColor(R.color.secondary_text));
@@ -357,7 +447,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
                         params_pos.addRule(RelativeLayout.RIGHT_OF, defLastId);
                         params_pos.addRule(RelativeLayout.ALIGN_BOTTOM, defLastId);
                     }
-                    TextView posTextView = new TextView(getContext());
+                    TextView posTextView = new TextView(getActivity());
                     posTextView.setText(Utils.translatePos(body.getDef().get(i).getPos()));
                     posTextView.setPadding(dpToPx(8), dpToPx(8), 0, 0);
                     posTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
@@ -380,9 +470,9 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
                             } else
                                 params_numeric_tr.addRule(RelativeLayout.BELOW, tr_LastId);
                         }
-                        TextView numericTrTextiew = new TextView(getContext());
+                        TextView numericTrTextiew = new TextView(getActivity());
                         numericTrTextiew.setText(String.valueOf(j + 1));
-                        numericTrTextiew.setTextColor(getContext().getResources().getColor(R.color.secondary_text));
+                        numericTrTextiew.setTextColor(getActivity().getResources().getColor(R.color.secondary_text));
                         numericTrTextiew.setPadding(0, 0, dpToPx(8), 0);
                         numericTrTextiew.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
@@ -416,7 +506,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
                         }
                     }
 
-                    TextView tr_TextView = new TextView(getContext());
+                    TextView tr_TextView = new TextView(getActivity());
                     tr_TextView.setText(Tr_and_Syn);
                     tr_TextView.setTextColor(getResources().getColor(R.color.blue_for_dictionary));
                     tr_TextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
@@ -434,7 +524,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
                         RelativeLayout.LayoutParams params_mean = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
                         params_mean.addRule(RelativeLayout.ALIGN_LEFT, tr_LastId);
                         params_mean.addRule(RelativeLayout.BELOW, tr_LastId);
-                        TextView meanTextView = new TextView(getContext());
+                        TextView meanTextView = new TextView(getActivity());
                         String meanString = "";
                         for (int mean = 0; mean < body.getDef().get(i).getTr().get(j).getMean().size(); mean++) {
                             if (mean + 1 != body.getDef().get(i).getTr().get(j).getMean().size()) {
@@ -465,7 +555,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
 
     private void createAndStartRecognizer() {
         if (ContextCompat.checkSelfPermission(getActivity().getApplicationContext(), RECORD_AUDIO) != PERMISSION_GRANTED) {
-            requestPermissions(new String[]{RECORD_AUDIO}, ConstantManager.REQUEST_PERMISSION_CODE_RECORD_AUDIO);
+            ActivityCompat.requestPermissions(getActivity(), new String[]{RECORD_AUDIO}, ConstantManager.REQUEST_PERMISSION_CODE_RECORD_AUDIO);
 
         } else {
             resetRecognizer();
@@ -509,62 +599,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
         }
     }
 
-    private void addToFavorits() {
-        TranslatedWords word = mRealm.where(TranslatedWords.class)
-                .equalTo("InputText", mTranslateInputEditText.getText().toString().trim())
-                .equalTo("TranslatedText", mTranslateOutputTextView.getText().toString().trim())
-                .findFirst();
-        if (word == null) {
-            final String inputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_left_txt_view)).getText().toString();
-            final String outputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_right_txt_view)).getText().toString();
-            Number currentIdNum = mRealm.where(TranslatedWords.class).max("Id");
-            int nextId;
-            if (currentIdNum == null) {
-                nextId = 1;
-            } else {
-                nextId = currentIdNum.intValue() + 1;
-            }
-            mRealm.beginTransaction();
-            word = mRealm.createObject(TranslatedWords.class, nextId);
-            word.setInputText(mTranslateInputEditText.getText().toString().trim());
-            word.setTranslatedText(mTranslateOutputTextView.getText().toString().trim());
-            word.setDirectionTranslation(langaugeToAbbreviations(inputLangauge, outputLangauge));
-            word.setFavorits(true);
-            mRealm.copyToRealmOrUpdate(word);
-            mRealm.commitTransaction();
-        } else {
-            if (!word.isFavorits()) {
-                //// TODO: 08.04.2017 если много одинаковых слов не фаворит, то последнее не добавляется в избранное, а остаётся 1 фаворит первое
-                mRealm.beginTransaction();
-                word.setFavorits(true);
-                mRealm.copyToRealmOrUpdate(word);
-                mRealm.commitTransaction();
-            }
-        }
-        Toast.makeText(getContext(), R.string.added_to_favorits, Toast.LENGTH_SHORT).show();
-    }
-
-
-    private void addTranslateToDb(String inputText, String translatedText, String directionTranslate, boolean isFavorits) {
-        //TODO: make async
-        mRealm.beginTransaction();
-        Number currentIdNum = mRealm.where(TranslatedWords.class).max("Id");
-        int nextId;
-        if (currentIdNum == null) {
-            nextId = 1;
-        } else {
-            nextId = currentIdNum.intValue() + 1;
-        }
-        TranslatedWords words = mRealm.createObject(TranslatedWords.class, nextId);
-        words.setInputText(inputText);
-        words.setTranslatedText(translatedText);
-        words.setDirectionTranslation(directionTranslate);
-        words.setFavorits(isFavorits);
-        mRealm.commitTransaction();
-    }
-
-
-    private void translateText(String text, final String lang) {
+    public void translateText(String text, final String lang) {
         //// TODO: make async
         YandexTranslateApi translateApi = RetroClient.getYandexTranslateApi();
         Call<TranslateResponse> translateResponseCall = translateApi.translateText(ConstantManager.KEY_API_TRANSLATE, text, lang);
@@ -573,51 +608,114 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
             public void onResponse(Call<TranslateResponse> call, Response<TranslateResponse> response) {
                 if (response.code() == 200) {
                     mTranslateOutputTextView.setText(response.body().getText());
-                    addTranslateToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), lang, false);
+                    addToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), lang, false);
                 }
             }
 
             @Override
             public void onFailure(Call<TranslateResponse> call, Throwable t) {
 
-                Toast.makeText(getContext(), "666", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "666", Toast.LENGTH_SHORT).show();
             }
         });
-
     }
 
-    private void lookInDictionary(String text, String lang) {
+
+    public void swapTranslatedText() {
+        String tempString = mTranslateInputEditText.getText().toString();
+        mTranslateInputEditText.setText(mTranslateOutputTextView.getText().toString());
+        mTranslateOutputTextView.setText(tempString);
+    }
+
+
+    public void lookInDictionary(String text, String lang) {
         //// TODO: make async
-        YandexDictApi dictApi = RetroClient.getYandexDictApi();
-        Call<LookUpResponse> lookUpResponseCall = dictApi.lookup(ConstantManager.KEY_API_DICT, lang, text);
-        lookUpResponseCall.enqueue(new Callback<LookUpResponse>() {
-            @Override
-            public void onResponse(Call<LookUpResponse> call, Response<LookUpResponse> response) {
-                if (response.code() == 200) {
-                    Toast.makeText(getContext(), "555", Toast.LENGTH_SHORT).show();
-                    addDictionary(response.body());
+        if (!Utils.isMoreTwoWords(text)) {
+            YandexDictApi dictApi = RetroClient.getYandexDictApi();
+            Call<LookUpResponse> lookUpResponseCall = dictApi.lookup(ConstantManager.KEY_API_DICT, lang, text);
+            lookUpResponseCall.enqueue(new Callback<LookUpResponse>() {
+                @Override
+                public void onResponse(Call<LookUpResponse> call, Response<LookUpResponse> response) {
+                    if (response.code() == 200) {
+                        Toast.makeText(getActivity(), "555", Toast.LENGTH_SHORT).show();
+                        resetDictionary();
+                        addDictionary(response.body());
 
+                    }
+                    if (response.code() != 200)
+                        Toast.makeText(getActivity(), "666", Toast.LENGTH_SHORT).show();
                 }
-                if (response.code() != 200)
-                    Toast.makeText(getContext(), "666", Toast.LENGTH_SHORT).show();
-            }
 
-            @Override
-            public void onFailure(Call<LookUpResponse> call, Throwable t) {
-                Toast.makeText(getContext(), "777", Toast.LENGTH_SHORT).show();
-            }
-        });
+                @Override
+                public void onFailure(Call<LookUpResponse> call, Throwable t) {
+                    Toast.makeText(getActivity(), "777", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 
-    private String langaugeToAbbreviations(String input, String output) {
-        AvailableLanguages languages = new AvailableLanguages(getContext());
-        ArrayMap<String, Integer> indexLangMap = languages.getLangIndex();
-        SparseArray<String> indexAbrMap = languages.getIndexAbr();
+    private void addToDb(String inputText, String translatedText, String directionTranslate, boolean isFavorits) {
+        //TODO: make async
 
-        int keyInput = indexLangMap.get(input);
-        int keyOutput = indexLangMap.get(output);
-        return indexAbrMap.get(keyInput) + "-" + indexAbrMap.get(keyOutput);
+        mRealm.beginTransaction();
+        if (isFavorits) {
+            Number currentIdNum = mRealm.where(FavoritsWord.class).max("Id");
+            int nextId;
+            if (currentIdNum == null) {
+                nextId = 1;
+            } else {
+                nextId = currentIdNum.intValue() + 1;
+            }
+            FavoritsWord favoritsWord = mRealm.createObject(FavoritsWord.class, nextId);
+            favoritsWord.setInputText(inputText);
+            favoritsWord.setTranslatedText(translatedText);
+            favoritsWord.setDirectionTranslation(directionTranslate);
+            favoritsWord.setFavorits(true);
+        }
+        TranslatedWords word = mRealm.where(TranslatedWords.class)
+                .equalTo("InputText", mTranslateInputEditText.getText().toString().trim())
+                .equalTo("TranslatedText", mTranslateOutputTextView.getText().toString().trim())
+                .findFirst();
+        if (word == null) {
+            Number currentIdNum = mRealm.where(TranslatedWords.class).max("Id");
+            int nextId;
+            if (currentIdNum == null) {
+                nextId = 1;
+            } else {
+                nextId = currentIdNum.intValue() + 1;
+            }
+            TranslatedWords newHistoryWord = mRealm.createObject(TranslatedWords.class, nextId);
+            newHistoryWord.setInputText(inputText);
+            newHistoryWord.setTranslatedText(translatedText);
+            newHistoryWord.setDirectionTranslation(directionTranslate);
+            newHistoryWord.setFavorits(isFavorits);
+            mRealm.copyToRealmOrUpdate(newHistoryWord);
+            mRealm.commitTransaction();
+        } else {
+            if (word.getFavoritsWord() == null && isFavorits) {
+                word.setFavorits(true);
+            }
+            mRealm.copyToRealmOrUpdate(word);
+            mRealm.commitTransaction();
+        }
+
+        if (isFavorits) {
+            mRealm.beginTransaction();
+            Number maxFavId = mRealm.where(FavoritsWord.class).max("Id");
+            Number maxHistoryId = mRealm.where(TranslatedWords.class).max("Id");
+            FavoritsWord lastFavoritsWord = mRealm.where(FavoritsWord.class).equalTo("Id", maxFavId.intValue()).findFirst();
+            TranslatedWords lastHistoryWord = mRealm.where(TranslatedWords.class).equalTo("Id", maxHistoryId.intValue()).findFirst();
+            lastFavoritsWord.setHistoryWords(lastHistoryWord);
+            lastHistoryWord.setFavoritsWord(lastFavoritsWord);
+            mRealm.commitTransaction();
+        }
+
     }
+
+    public String getInputTranslateText() {
+        return mTranslateInputEditText.getText().toString();
+    }
+
 
     private void resetDictionary() {
         if (mDictionaryContainer.getChildCount() != 0) {
@@ -631,7 +729,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
     }
 
     private int dpToPx(int dp) {
-        DisplayMetrics displayMetrics = getContext().getResources().getDisplayMetrics();
+        DisplayMetrics displayMetrics = getActivity().getResources().getDisplayMetrics();
         return Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
     }
 
@@ -666,12 +764,12 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
     @Override
     public void onRecordingBegin(Recognizer recognizer) {
         //// TODO: 09.04.2017 сделать интерфейс записи голоса
-        Toast.makeText(getContext(), "begin", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity(), "begin", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onSpeechDetected(Recognizer recognizer) {
-        Toast.makeText(getContext(), "detected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity(), "detected", Toast.LENGTH_SHORT).show();
 
     }
 
@@ -683,7 +781,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
     @Override
     public void onRecordingDone(Recognizer recognizer) {
 
-        Toast.makeText(getContext(), "RecordingDone", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity(), "RecordingDone", Toast.LENGTH_SHORT).show();
 
     }
 
@@ -711,7 +809,7 @@ public class TranslateFragment extends Fragment implements VocalizerListener, Re
 
     @Override
     public void onError(Recognizer recognizer, Error error) {
-        Toast.makeText(getContext(), error.toString(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity(), error.toString(), Toast.LENGTH_SHORT).show();
     }
 //endregion
 

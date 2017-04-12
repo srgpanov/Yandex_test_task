@@ -32,6 +32,14 @@ public class AvailableLanguages {
         return mIndexAbr;
 
     }
+    public String langaugeToAbbreviations(String input, String output) {
+        ArrayMap<String, Integer> indexLangMap = this.getLangIndex();
+        SparseArray<String> indexAbrMap = this.getIndexAbr();
+
+        int keyInput = indexLangMap.get(input);
+        int keyOutput = indexLangMap.get(output);
+        return indexAbrMap.get(keyInput) + "-" + indexAbrMap.get(keyOutput);
+    }
 
     public SparseArray<String> getIndexLang() {
         return mIndexLang;

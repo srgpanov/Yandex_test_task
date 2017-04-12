@@ -7,21 +7,27 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
-import srgpanov.yandex_test_task.Data.TranslatedWords;
+import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.FavoritsAdapter;
 import srgpanov.yandex_test_task.R;
 
@@ -29,27 +35,75 @@ import srgpanov.yandex_test_task.R;
  * Created by Пан on 28.03.2017.
  */
 
-public class BookmarksFragment extends Fragment {
+public class BookmarksFragment extends android.app.Fragment {
     private RecyclerView mRecyclerViewFavorits;
     private SearchView mSearchView;
-    private RealmResults<TranslatedWords> mFavoritsWords;
+    private Toolbar mFavoritsToolbar;
+    private RealmResults<FavoritsWord> mFavoritsWords;
     private FavoritsAdapter mFavoritsAdapter;
     private Realm mRealm;
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mRealm = Realm.getDefaultInstance();
-    }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        mRealm = Realm.getDefaultInstance();
         View rootView = inflater.inflate(R.layout.fragment_bookmarks, container, false);
+        mFavoritsToolbar = (Toolbar) rootView.findViewById(R.id.toolbar_favorits);
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
+        activity.setSupportActionBar(mFavoritsToolbar);
+        ActionBar actionBar = activity.getSupportActionBar();
+        setHasOptionsMenu(true);
         mRecyclerViewFavorits = (RecyclerView) rootView.findViewById(R.id.recycler_view_favorits);
+        setupRecycleView();
 
-        mSearchView = (SearchView) rootView.findViewById(R.id.search_view_favorits);
-        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+        return rootView;
+    }
+
+
+    private void setupRecycleView() {
+        mFavoritsWords = mRealm.where(FavoritsWord.class).findAllAsync();
+        Toast.makeText(getActivity().getApplicationContext(), "setup RV", Toast.LENGTH_SHORT).show();
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
+        mRecyclerViewFavorits.setLayoutManager(linearLayoutManager);
+        mRecyclerViewFavorits.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
+        mFavoritsAdapter = new FavoritsAdapter(mFavoritsWords, mRealm, new FavoritsAdapter.ViewHolder.CustomClickListener() {
+            @Override
+            public void onItemClickListener(View view, int position) {
+                switch (view.getId()) {
+                    case R.id.item_image_view:
+                        mFavoritsAdapter.remove(position);
+                        break;
+                    case R.id.item_primary_text:
+                        Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();
+                        break;
+                    case R.id.item_seconadary_text:
+                        Toast.makeText(getActivity(), "seconadary", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        });
+        mRecyclerViewFavorits.setAdapter(mFavoritsAdapter);
+        setUpItemTouchHelper();
+        setUpAnimationDecoratorHelper();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mRealm.close();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.favorits_menu, menu);
+        MenuItem searchItem = menu.findItem(R.id.menu_search_favorits);
+
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        searchView.setQueryHint(getString(R.string.query_hint));
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 return false;
@@ -61,90 +115,7 @@ public class BookmarksFragment extends Fragment {
                 return true;
             }
         });
-
-        return rootView;
     }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        setupRecycleView();
-    }
-
-    private void setupRecycleView() {
-        mFavoritsWords = mRealm.where(TranslatedWords.class).equalTo("Favorits",true).findAllAsync();
-        Toast.makeText(getActivity().getApplicationContext(), "setup RV", Toast.LENGTH_SHORT).show();
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
-        mRecyclerViewFavorits.setLayoutManager(linearLayoutManager);
-        mRecyclerViewFavorits.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-        mFavoritsAdapter = new FavoritsAdapter(mFavoritsWords,mRealm, new FavoritsAdapter.ViewHolder.CustomClickListener() {
-            @Override
-            public void onItemClickListener(View view, int position) {
-                switch (view.getId()) {
-                    case R.id.item_image_view:
-                        setFavoritWord(position);
-                        break;
-                    case R.id.item_primary_text:
-                        Toast.makeText(getContext(), "primary_text", Toast.LENGTH_SHORT).show();
-                        break;
-                    case R.id.item_seconadary_text:
-                        Toast.makeText(getContext(), "seconadary", Toast.LENGTH_SHORT).show();
-                        break;
-                }
-            }
-        });
-        mRecyclerViewFavorits.setAdapter(mFavoritsAdapter);
-        setUpItemTouchHelper();
-        setUpAnimationDecoratorHelper();
-    }
-
-
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        mRealm.close();
-    }
-
-
-
-    private void setFavoritWord(int id) {
-        final int position = id;
-        mRealm.executeTransaction(new Realm.Transaction() {
-            @Override
-            public void execute(Realm realm) {
-                if (mFavoritsWords.get(position).isFavorits()) {
-                    mFavoritsWords.get(position).setFavorits(false);
-                } else {
-                    mFavoritsWords.get(position).setFavorits(true);
-                }
-            }
-        });
-        Toast.makeText(getContext(),"Favorits changed",Toast.LENGTH_SHORT).show();
-//        mRealm.executeTransactionAsync(new Realm.Transaction() {
-//            @Override
-//            public void execute(Realm realm) {
-//                if (mFavoritsWords.get(position).isFavorits()) {
-//                    mFavoritsWords.get(position).setFavorits(false);
-//                } else {
-//                    mFavoritsWords.get(position).setFavorits(true);
-//                }
-//            }
-//        }, new Realm.Transaction.OnSuccess() {
-//            @Override
-//            public void onSuccess() {
-//                mFavoritsAdapter.remove(position);
-//                Toast.makeText(getContext(),"Favorits changed",Toast.LENGTH_SHORT).show();
-//            }
-//        }, new Realm.Transaction.OnError() {
-//            @Override
-//            public void onError(Throwable error) {
-//                Toast.makeText(getContext(),"Data was not changed",Toast.LENGTH_SHORT).show();
-//            }
-//        });
-
-    }
-
 
 
     private void setUpItemTouchHelper() {

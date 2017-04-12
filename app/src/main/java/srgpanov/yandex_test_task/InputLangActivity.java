@@ -25,7 +25,7 @@ public class InputLangActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_input_lang);
-        mToolbar = (Toolbar) findViewById(R.id.toolbar_translate);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar_input_lang_activity);
         setSupportActionBar(mToolbar);
         AvailableLanguages languages = new AvailableLanguages(this);
         ArrayList<String> lang = new ArrayList<>();

@@ -8,32 +8,6 @@
     android:theme="@style/AppTheme"
     tools:context="srgpanov.yandex_test_task.MainActivity">
 
-    <android.support.design.widget.AppBarLayout
-
-        android:id="@+id/appbar_layout_toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
-
-        <include
-            android:id="@+id/toolbar_translate"
-            layout="@layout/toolbar_translate"
-            android:visibility="visible"
-            />
-
-        <include
-            android:id="@+id/toolbar_history"
-            layout="@layout/toolbar_histoty"
-            android:visibility="gone"
-            />
-
-        <include
-            android:id="@+id/toolbar_bookmark"
-            layout="@layout/toolbar_bookmarks"
-            android:visibility="gone"
-            />
-    </android.support.design.widget.AppBarLayout>
-
     <LinearLayout
         android:id="@+id/fragments_container"
         android:layout_width="match_parent"
@@ -41,7 +15,7 @@
         android:layout_above="@+id/navigation"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_below="@id/appbar_layout_toolbar"
+        android:layout_alignParentTop="true"
         android:orientation="vertical">
     </LinearLayout>
 

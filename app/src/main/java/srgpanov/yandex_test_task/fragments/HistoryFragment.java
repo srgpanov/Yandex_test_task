@@ -7,20 +7,27 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
+import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
 import srgpanov.yandex_test_task.HistoryAdapter;
 import srgpanov.yandex_test_task.R;
@@ -29,49 +36,64 @@ import srgpanov.yandex_test_task.R;
  * Created by Пан on 30.03.2017.
  */
 
-public class HistoryFragment extends Fragment {
+public class HistoryFragment extends android.app.Fragment {
     private RecyclerView mRecyclerView;
-    private SearchView mSearchView;
+    private Toolbar mHistoryToolbar;
     private RealmResults<TranslatedWords> mTranslatedWords;
     private HistoryAdapter mHistoryAdapter;
     private Realm mRealm;
+    private ActionBar mActionBar;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mRealm = Realm.getDefaultInstance();
+
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        mRealm = Realm.getDefaultInstance();
         View rootView = inflater.inflate(R.layout.fragment_history, container, false);
-        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view_history);
-        mSearchView = (SearchView) rootView.findViewById(R.id.search_view_history);
-        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                return false;
-            }
+        mHistoryToolbar = (Toolbar)rootView.findViewById(R.id.toolbar_history);
+        AppCompatActivity activity = (AppCompatActivity)getActivity();
+        activity.setSupportActionBar(mHistoryToolbar);
+        mActionBar = activity.getSupportActionBar();
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                mHistoryAdapter.getFilter().filter(newText);
-                return true;
-            }
-        });
+        setHasOptionsMenu(true);
+        mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view_history);
+        setupRecycleView();
+
         return rootView;
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        setupRecycleView();
-    }
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.history_menu,menu);
+        MenuItem searchItem = menu.findItem(R.id.menu_search_history);
+
+        SearchView searchView= (SearchView) MenuItemCompat.getActionView(searchItem);
+        searchView.setQueryHint(getString(R.string.query_hint));
+
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String query) {
+                    return false;
+                }
+
+                @Override
+                public boolean onQueryTextChange(String newText) {
+                    mHistoryAdapter.getFilter().filter(newText);
+                    return true;
+                }
+            });
+        }
+
 
     private void setupRecycleView() {
         mTranslatedWords = mRealm.where(TranslatedWords.class).findAll();
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
         mHistoryAdapter = new HistoryAdapter(mTranslatedWords,mRealm, new HistoryAdapter.ViewHolder.CustomClickListener() {
@@ -82,10 +104,10 @@ public class HistoryFragment extends Fragment {
                         setFavoritWord(position);
                         break;
                     case R.id.item_primary_text:
-                        Toast.makeText(getContext(), "primary_text", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.item_seconadary_text:
-                        Toast.makeText(getContext(), "seconadary", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "seconadary", Toast.LENGTH_SHORT).show();
                         break;
                 }
             }
@@ -95,13 +117,12 @@ public class HistoryFragment extends Fragment {
         setUpAnimationDecoratorHelper();
     }
 
-
-
     @Override
-    public void onDestroy() {
-        super.onDestroy();
+    public void onDestroyView() {
+        super.onDestroyView();
         mRealm.close();
     }
+
 
 
 
@@ -129,7 +150,30 @@ public class HistoryFragment extends Fragment {
             @Override
             public void execute(Realm realm) {
                 mTranslatedWords.get(position).setFavorits(!mTranslatedWords.get(position).isFavorits());
-                Toast.makeText(getActivity().getApplicationContext(), "Marked", Toast.LENGTH_SHORT).show();
+            }
+        });
+        mRealm.executeTransaction(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                if(mTranslatedWords.get(position).isFavorits()){
+                    Number currentIdNum = mRealm.where(FavoritsWord.class).max("Id");
+                    int nextId;
+                    if (currentIdNum == null) {
+                        nextId = 1;
+                    } else {
+                        nextId = currentIdNum.intValue() + 1;
+                    }
+                    FavoritsWord word = mRealm.createObject(FavoritsWord.class, nextId);
+                    word.setInputText(mTranslatedWords.get(position).getInputText());
+                    word.setTranslatedText(mTranslatedWords.get(position).getTranslatedText());
+                    word.setDirectionTranslation(mTranslatedWords.get(position).getDirectionTranslation());
+                    word.setFavorits(true);
+                    word.setHistoryWords(mTranslatedWords.get(position));
+                    mTranslatedWords.get(position).setFavoritsWord(word);
+                }else {
+                    if (mTranslatedWords.get(position).getFavoritsWord()!=null)
+                    mTranslatedWords.get(position).getFavoritsWord().deleteFromRealm();
+                }
             }
         });
     }

@@ -1,8 +1,8 @@
 package srgpanov.yandex_test_task.fragments;
 
-import android.content.Context;
 import android.os.Bundle;
-import android.support.v7.preference.PreferenceFragmentCompat;
+import android.preference.PreferenceFragment;
+import android.support.annotation.Nullable;
 
 import srgpanov.yandex_test_task.R;
 
@@ -10,16 +10,12 @@ import srgpanov.yandex_test_task.R;
  * Created by Пан on 28.03.2017.
  */
 
-public class SettingsFragment extends PreferenceFragmentCompat {
-
-
+public class SettingsFragment extends PreferenceFragment {
     @Override
-    public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
-        setPreferencesFromResource(R.xml.fragment_preference,rootKey);
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        addPreferencesFromResource(R.xml.fragment_preference);
     }
 
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-    }
+
 }

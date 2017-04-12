@@ -12,20 +12,20 @@ import android.widget.TextView;
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
-import srgpanov.yandex_test_task.Data.TranslatedWords;
+import srgpanov.yandex_test_task.Data.FavoritsWord;
 
 /**
  * Created by Пан on 30.03.2017.
  */
 
-public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHolder> implements Filterable,RealmChangeListener {
-    private RealmResults<TranslatedWords> mFavoritsWords;
+public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHolder> implements Filterable, RealmChangeListener {
+    private RealmResults<FavoritsWord> mFavoritsWords;
     private Realm mRealm;
     private ViewHolder.CustomClickListener mCustomClickListener;
 
 
     //конструктор адаптера, в него передаются данные которые будут биндиться
-    public FavoritsAdapter(RealmResults<TranslatedWords> favoritsWords, Realm realm, ViewHolder.CustomClickListener listener) {
+    public FavoritsAdapter(RealmResults<FavoritsWord> favoritsWords, Realm realm, ViewHolder.CustomClickListener listener) {
         this.mCustomClickListener = listener;
         mRealm = realm;
         mFavoritsWords = favoritsWords;
@@ -44,15 +44,15 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
     // Заменяет контент отдельного view
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        TranslatedWords translatedWord = mFavoritsWords.get(position);
-        if (translatedWord.isFavorits()) {
+        FavoritsWord favoritWord = mFavoritsWords.get(position);
+        if (favoritWord.isFavorits()) {
             holder.mItemImageView.setImageResource(R.drawable.ic_bookmark_yellow_24dp);
         } else {
             holder.mItemImageView.setImageResource(R.drawable.ic_bookmark_grey_24dp);
         }
-        holder.mPrimaryTextView.setText(translatedWord.getInputText());
-        holder.mSecondaryTextView.setText(translatedWord.getTranslatedText());
-        holder.mDirectionTextView.setText(translatedWord.getDirectionTranslation());
+        holder.mPrimaryTextView.setText(favoritWord.getInputText());
+        holder.mSecondaryTextView.setText(favoritWord.getTranslatedText());
+        holder.mDirectionTextView.setText(favoritWord.getDirectionTranslation());
 
     }
 
@@ -84,9 +84,9 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
         };
     }
 
-    private RealmResults<TranslatedWords> filterWords(String query) {
+    private RealmResults<FavoritsWord> filterWords(String query) {
         return mRealm
-                .where(TranslatedWords.class)
+                .where(FavoritsWord.class)
                 .beginGroup().contains("InputText", query)
                 .or()
                 .contains("TranslatedText", query)
@@ -96,7 +96,10 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
 
     public void remove(int position) {
         mRealm.beginTransaction();
-        mFavoritsWords.get(position).setFavorits(false);
+        if (mFavoritsWords.get(position).getHistoryWords() != null) {
+            mFavoritsWords.get(position).getHistoryWords().setFavorits(false);
+        }
+        mFavoritsWords.get(position).deleteFromRealm();
         mRealm.commitTransaction();
 
         notifyItemRemoved(position);
