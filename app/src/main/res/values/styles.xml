@@ -10,6 +10,7 @@
         <item name="android:colorAccent">@color/accent</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
         <item name="actionMenuTextColor">@color/primary_text</item>
+        <item name="colorControlNormal">@color/primary_text</item>
 
 
     </style>

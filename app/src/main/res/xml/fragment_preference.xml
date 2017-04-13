@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">>
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <ListPreference
-        android:key="test_style"
-        android:title="Стиль для шрифта"
-        android:summary="Устанавливет стиль для шрифта"
+        android:key="delay_to_translate"
+        android:title="Скорость перевода"
+        android:summary="Частота обращения к сереверу перевода"
         android:defaultValue="1"
-        android:entries="@array/text_style"
-        android:entryValues="@array/text_style"
-        android:dialogTitle="Выберите задержку до перевода"/>
+        android:entries="@array/delay_trnslate"
+        android:entryValues="@array/delay_trnslate"
+        android:dialogTitle="Скорость"/>
+    <ListPreference
+        android:key="speech_voice"
+        android:title="@string/sintez_voice"
+        android:summary="Выбор голоса озвучивания"
+        android:defaultValue="1"
+        android:entries="@array/speech_voices"
+        android:entryValues="@array/speech_voices"
+        android:dialogTitle="Выбор голоса"/>
 </PreferenceScreen>

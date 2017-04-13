@@ -43,7 +43,7 @@ public class HistoryFragment extends android.app.Fragment {
     private HistoryAdapter mHistoryAdapter;
     private Realm mRealm;
     private ActionBar mActionBar;
-
+//// TODO: 13.04.2017 добавить сортировку через меню
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,7 +59,6 @@ public class HistoryFragment extends android.app.Fragment {
         AppCompatActivity activity = (AppCompatActivity)getActivity();
         activity.setSupportActionBar(mHistoryToolbar);
         mActionBar = activity.getSupportActionBar();
-
         setHasOptionsMenu(true);
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view_history);
         setupRecycleView();

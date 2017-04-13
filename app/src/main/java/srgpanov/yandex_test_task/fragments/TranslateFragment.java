@@ -75,7 +75,6 @@ import static srgpanov.yandex_test_task.Utils.ConstantManager.CODE_GET_LANG_OUTP
 public class TranslateFragment extends android.app.Fragment implements VocalizerListener, RecognizerListener {
 
 
-    private int mTimeToTranslate = 3;
     //region views
     private TextView mTranslateOutputTextView;
     private YandexEditText mTranslateInputEditText;
@@ -307,7 +306,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
                             lookInDictionary(e.toString(), availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge));
                         }
                     }
-                }, mTimeToTranslate * 1000);
+                }, mPreferences.getInt(ConstantManager.DELAY_TO_TRANSLATE,ConstantManager.DELAY_NORMAL));
             }
         });
     }
@@ -574,22 +573,20 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     }
 
     private void startSpeech(String lang, String text) {
-        //TODO сделать выбор голоса в настройках
         if (!TextUtils.isEmpty(text)) {
             resetVocalizer();
             if (lang.equals(getResources().getString(R.string.ru))) {
-                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.RUSSIAN, text, true, Vocalizer.Voice.ZAHAR);
+                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.RUSSIAN, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE,ConstantManager.SPEECH_VOICE_ZAHAR));
             } else if (lang.equals(getResources().getString(R.string.en))) {
-                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.ENGLISH, text, true, Vocalizer.Voice.ZAHAR);
+                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.ENGLISH, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE,ConstantManager.SPEECH_VOICE_ZAHAR));
             } else if (lang.equals(getResources().getString(R.string.uk))) {
-                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.UKRAINIAN, text, true, Vocalizer.Voice.ZAHAR);
+                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.UKRAINIAN, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE,ConstantManager.SPEECH_VOICE_ZAHAR));
             } else if (lang.equals(getResources().getString(R.string.tr))) {
-                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.TURKISH, text, true, Vocalizer.Voice.ZAHAR);
+                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.TURKISH, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE,ConstantManager.SPEECH_VOICE_ZAHAR));
             }
             mVocalizer.setListener(this);
             mVocalizer.start();
         }
-
     }
 
     private void resetVocalizer() {

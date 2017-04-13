@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="text_style">
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
+    <string-array name="speech_voices">
+        <item>"Захар"</item>
+        <item>"Евгения"</item>
+        <item>"Алиса"</item>
+        <item>"Борис"</item>
+        <item>"Омаз"</item>
+    </string-array>
+    <string-array name="delay_trnslate">
+        <item>Быстрая</item>
+        <item>Средняя</item>
+        <item>Медленная</item>
     </string-array>
 </resources>

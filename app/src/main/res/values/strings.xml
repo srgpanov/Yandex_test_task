@@ -118,4 +118,9 @@
     <string name="menu_search">Поиск</string>
     <string name="query_hint">Найти</string>
     <string name="toolbar_setting">Настройки</string>
+    <string name="voice_zahar">Захар</string>
+    <string name="curent_voice">Текущий голос: </string>
+    <string name="sintez_voice">Синтезатор речи</string>
+    <string name="curent_delay"> скорость перевода</string>
+
 </resources>

@@ -18,7 +18,7 @@ import static srgpanov.yandex_test_task.R.id.translate;
 public class MainActivity extends AppCompatActivity {
 
     SharedPreferences mPreferences;
-
+    private int mCurrentFragment =1;
     private android.app.FragmentManager mFragmentManager;
     private TranslateFragment mTranslateFragment;
     private HistoryFragment mHistoryFragment;
@@ -61,35 +61,73 @@ public class MainActivity extends AppCompatActivity {
         mHistoryFragment = new HistoryFragment();
         mBookmarksFragment = new BookmarksFragment();
         mSettingFragmentContainer = new SettingFragmentContainer();
-
-        mFragmentManager.beginTransaction()
-                .add(R.id.main_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE)
-                .commit();
-
+        loadLastFragment(savedInstanceState);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
     }
+
+    private void loadLastFragment(Bundle savedInstanceState) {
+        if (savedInstanceState == null) {
+            mFragmentManager.beginTransaction()
+                    .add(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE)
+                    .commit();
+        } else {
+            mCurrentFragment = savedInstanceState.getInt(ConstantManager.CURRENT_FRAGMENT);
+            switch (mCurrentFragment) {
+                case 1:
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
+                    break;
+                case 2:
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mHistoryFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
+                    break;
+                case 3:
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mBookmarksFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
+                    break;
+                case 4:
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mSettingFragmentContainer, ConstantManager.FRAGMENT_TRANSLATE).commit();
+                    break;
+                default:
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
+            }
+
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(ConstantManager.CURRENT_FRAGMENT, mCurrentFragment);
+    }
+
     private void changeFragment(int position) {
 
         switch (position) {
             case 0:
-                if (!mTranslateFragment.isVisible())
-                    mFragmentManager.beginTransaction().replace(R.id.main_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
+                if (!mTranslateFragment.isVisible()) {
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
+                    mCurrentFragment = 1;
+                }
                 break;
             case 1:
-                if (!mHistoryFragment.isVisible())
-                    mFragmentManager.beginTransaction().replace(R.id.main_container, mHistoryFragment, ConstantManager.FRAGMENT_HISTORY).commit();
+                if (!mHistoryFragment.isVisible()) {
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mHistoryFragment, ConstantManager.FRAGMENT_HISTORY).commit();
+                    mCurrentFragment = 2;
+                }
                 break;
             case 2:
-                if (!mBookmarksFragment.isVisible())
-                    mFragmentManager.beginTransaction().replace(R.id.main_container, mBookmarksFragment, ConstantManager.FRAGMENT_FAVORITS).commit();
+                if (!mBookmarksFragment.isVisible()) {
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mBookmarksFragment, ConstantManager.FRAGMENT_FAVORITS).commit();
+                    mCurrentFragment = 3;
+                }
                 break;
             case 3:
-                if (!mSettingFragmentContainer.isVisible())
-                    mFragmentManager.beginTransaction().replace(R.id.main_container, mSettingFragmentContainer, ConstantManager.FRAGMENT_SETTING).commit();
+                if (!mSettingFragmentContainer.isVisible()) {
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mSettingFragmentContainer, ConstantManager.FRAGMENT_SETTING).commit();
+                    mCurrentFragment = 4;
+                }
                 break;
             default:
-                mFragmentManager.beginTransaction().replace(R.id.main_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
+                mFragmentManager.beginTransaction().replace(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
 
         }
 

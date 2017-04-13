@@ -93,8 +93,6 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
         mRealm.beginTransaction();
         mTranslatedWords.get(position).deleteFromRealm();
         mRealm.commitTransaction();
-
-        notifyItemRemoved(position);
     }
 
 

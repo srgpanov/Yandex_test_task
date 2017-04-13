@@ -1,5 +1,7 @@
 package srgpanov.yandex_test_task.Utils;
 
+import ru.yandex.speechkit.Vocalizer;
+
 /**
  * Created by Пан on 30.03.2017.
  */
@@ -20,6 +22,21 @@ public interface ConstantManager {
     String TOOLBAR_RIGHT_TEXT_VIEW = "righttxtview";
     String INPUT_TEXT_VIEW = "inputtxtview";
     String OUTPUT_TEXT_VIEW = "outputtxtview";
+
+    String SPEECH_VOICE = "Voice";
+
+    String SPEECH_VOICE_ZAHAR = Vocalizer.Voice.ZAHAR;
+    String SPEECH_VOICE_ALYSS = Vocalizer.Voice.ALYSS;
+    String SPEECH_VOICE_ERMIL = Vocalizer.Voice.ERMIL;
+    String SPEECH_VOICE_JANE = Vocalizer.Voice.JANE;
+    String SPEECH_VOICE_OMAZH = Vocalizer.Voice.OMAZH;
+
+    String DELAY_TO_TRANSLATE = "delay";
+
+    int DELAY_LOW =500;
+    int DELAY_NORMAL=2000;
+    int DELAY_HIGHT=5000;
+
     int CODE_GET_LANG_INPUT = 100;
     int CODE_GET_LANG_OUTPUT = 101;
     int REQUEST_PERMISSION_CODE_RECORD_AUDIO = 102;
@@ -27,4 +44,5 @@ public interface ConstantManager {
 
     int PERMISSION_REQUEST_SETTINGS_CODE = 103;
 
+    String CURRENT_FRAGMENT ="current_fragment" ;
 }

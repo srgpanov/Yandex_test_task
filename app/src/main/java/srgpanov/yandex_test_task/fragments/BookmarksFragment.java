@@ -62,8 +62,7 @@ public class BookmarksFragment extends android.app.Fragment {
 
 
     private void setupRecycleView() {
-        mFavoritsWords = mRealm.where(FavoritsWord.class).findAllAsync();
-        Toast.makeText(getActivity().getApplicationContext(), "setup RV", Toast.LENGTH_SHORT).show();
+        mFavoritsWords = mRealm.where(FavoritsWord.class).findAll();
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerViewFavorits.setLayoutManager(linearLayoutManager);
         mRecyclerViewFavorits.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
@@ -78,7 +77,7 @@ public class BookmarksFragment extends android.app.Fragment {
                         Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.item_seconadary_text:
-                        Toast.makeText(getActivity(), "seconadary", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "secondary", Toast.LENGTH_SHORT).show();
                         break;
                 }
             }

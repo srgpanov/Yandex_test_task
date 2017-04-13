@@ -102,7 +102,6 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
         mFavoritsWords.get(position).deleteFromRealm();
         mRealm.commitTransaction();
 
-        notifyItemRemoved(position);
     }
 
     @Override
