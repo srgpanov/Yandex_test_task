@@ -8,7 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
 import srgpanov.yandex_test_task.Utils.ConstantManager;
-import srgpanov.yandex_test_task.fragments.BookmarksFragment;
+import srgpanov.yandex_test_task.fragments.FavoritsFragment;
 import srgpanov.yandex_test_task.fragments.HistoryFragment;
 import srgpanov.yandex_test_task.fragments.SettingFragmentContainer;
 import srgpanov.yandex_test_task.fragments.TranslateFragment;
@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private android.app.FragmentManager mFragmentManager;
     private TranslateFragment mTranslateFragment;
     private HistoryFragment mHistoryFragment;
-    private BookmarksFragment mBookmarksFragment;
+    private FavoritsFragment mFavoritsFragment;
     private SettingFragmentContainer mSettingFragmentContainer;
 
 
@@ -59,11 +59,12 @@ public class MainActivity extends AppCompatActivity {
         mFragmentManager = getFragmentManager();
         mTranslateFragment = new TranslateFragment();
         mHistoryFragment = new HistoryFragment();
-        mBookmarksFragment = new BookmarksFragment();
+        mFavoritsFragment = new FavoritsFragment();
         mSettingFragmentContainer = new SettingFragmentContainer();
         loadLastFragment(savedInstanceState);
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+
     }
 
     private void loadLastFragment(Bundle savedInstanceState) {
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
                     mFragmentManager.beginTransaction().replace(R.id.fragments_container, mHistoryFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
                     break;
                 case 3:
-                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mBookmarksFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mFavoritsFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
                     break;
                 case 4:
                     mFragmentManager.beginTransaction().replace(R.id.fragments_container, mSettingFragmentContainer, ConstantManager.FRAGMENT_TRANSLATE).commit();
@@ -115,8 +116,8 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case 2:
-                if (!mBookmarksFragment.isVisible()) {
-                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mBookmarksFragment, ConstantManager.FRAGMENT_FAVORITS).commit();
+                if (!mFavoritsFragment.isVisible()) {
+                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mFavoritsFragment, ConstantManager.FRAGMENT_FAVORITS).commit();
                     mCurrentFragment = 3;
                 }
                 break;

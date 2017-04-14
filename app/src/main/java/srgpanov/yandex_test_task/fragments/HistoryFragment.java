@@ -47,8 +47,7 @@ public class HistoryFragment extends android.app.Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-    }
+            }
 
     @Nullable
     @Override
@@ -62,6 +61,7 @@ public class HistoryFragment extends android.app.Fragment {
         setHasOptionsMenu(true);
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view_history);
         setupRecycleView();
+
 
         return rootView;
     }
@@ -91,7 +91,7 @@ public class HistoryFragment extends android.app.Fragment {
 
 
     private void setupRecycleView() {
-        mTranslatedWords = mRealm.where(TranslatedWords.class).findAll();
+        mTranslatedWords = mRealm.where(TranslatedWords.class).findAllAsync();
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
@@ -126,25 +126,6 @@ public class HistoryFragment extends android.app.Fragment {
 
 
     private void setFavoritWord(final int position) {
-//        mRealm.executeTransactionAsync(new Realm.Transaction() {
-//            @Override
-//            public void execute(Realm realm) {
-//                if (mTranslatedWords.get(position).isFavorits()) {
-//                    mTranslatedWords.get(position).setFavorits(false);
-//                } else mTranslatedWords.get(position).setFavorits(true);
-//            }
-//        }, new Realm.Transaction.OnSuccess() {
-//            @Override
-//            public void onSuccess() {
-//                mHistoryAdapter.notifyDataSetChanged();
-//                Toast.makeText(getContext(),"+",Toast.LENGTH_SHORT).show();
-//            }
-//        }, new Realm.Transaction.OnError() {
-//            @Override
-//            public void onError(Throwable error) {
-//                Toast.makeText(getContext(),"error",Toast.LENGTH_SHORT).show();
-//            }
-//        });
         mRealm.executeTransaction(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {

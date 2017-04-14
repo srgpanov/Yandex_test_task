@@ -64,6 +64,7 @@ import srgpanov.yandex_test_task.network.res.TranslateResponse;
 import static android.Manifest.permission.RECORD_AUDIO;
 import static android.app.Activity.RESULT_OK;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static srgpanov.yandex_test_task.R.string.en;
 import static srgpanov.yandex_test_task.Utils.ConstantManager.CODE_GET_LANG_INPUT;
 import static srgpanov.yandex_test_task.Utils.ConstantManager.CODE_GET_LANG_OUTPUT;
 
@@ -91,6 +92,10 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     private RelativeLayout mTranslateContainer;
     private RelativeLayout mDictionaryContainer;
     private Toolbar mTranslateToolbar;
+    private TextView mTolbarLeftTextView;
+    private TextView mTolbarRightTextView;
+
+
     //endregion
     private SharedPreferences mPreferences;
     private Realm mRealm;
@@ -118,6 +123,8 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         actionBar.setDisplayShowCustomEnabled(true);
         mTranslateContainer = (RelativeLayout) rootView.findViewById(R.id.translate_container);
         mDictionaryContainer = (RelativeLayout) rootView.findViewById(R.id.dictionary_container);
+        mTolbarLeftTextView = (TextView) rootView.findViewById(R.id.toolbar_left_txt_view);
+        mTolbarRightTextView = (TextView) rootView.findViewById(R.id.toolbar_right_txt_view);
         setupButtons(rootView);
         setupTextViews(rootView);
         setupToolbar(rootView);
@@ -192,7 +199,9 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         Toast.makeText(getActivity(), "onViewStateRestored", Toast.LENGTH_SHORT).show();
         if (savedInstanceState != null) {
             mTranslateInputEditText.setText(savedInstanceState.getString(ConstantManager.INPUT_TEXT_VIEW));
+
             mTranslateOutputTextView.setText(savedInstanceState.getString(ConstantManager.OUTPUT_TEXT_VIEW));
+
             Toast.makeText(getActivity(), "Restore", Toast.LENGTH_SHORT).show();
         }
     }
@@ -293,20 +302,40 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             public void afterTextChanged(Editable editable) {
                 final Editable e = editable;
                 mTimer = new Timer();
-                final String inputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_left_txt_view)).getText().toString();
-                final String outputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_right_txt_view)).getText().toString();
-                final AvailableLanguages availableLanguages = new AvailableLanguages(getActivity());
+
+//                if (!TextUtils.isEmpty(e.toString())) {
+//
+//                    translateText(e.toString(), "ru-en"); // перевод текста и запись в базу данных запускается в отдельном потоке
+//                }
                 //создаём таймер, в кооторый стартует если пользователь не вводит текст 3 секунды
                 //TODO: при переключении фрагмента падает приложение
                 mTimer.schedule(new TimerTask() {
                     @Override
                     public void run() {
                         if (!TextUtils.isEmpty(e.toString())) {
-                            translateText(e.toString(), availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge)); // перевод текста и запись в базу данных запускается в отдельном потоке
-                            lookInDictionary(e.toString(), availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge));
+
+                            translateText(e.toString(), getDirection(getActivity())); // перевод текста и запись в базу данных запускается в отдельном потоке
                         }
                     }
-                }, mPreferences.getInt(ConstantManager.DELAY_TO_TRANSLATE,ConstantManager.DELAY_NORMAL));
+                }, mPreferences.getInt(ConstantManager.DELAY_TO_TRANSLATE, ConstantManager.DELAY_NORMAL));
+            }
+        });
+        mTranslateOutputTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                lookInDictionary(mTranslateInputEditText.getText().toString(), getDirection(getActivity()));
+                addToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), getDirection(getActivity()), false);
+
             }
         });
     }
@@ -358,11 +387,9 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         mBookamark.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String inputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_left_txt_view)).getText().toString();
-                String outputLangauge = ((TextView) getActivity().findViewById(R.id.toolbar_right_txt_view)).getText().toString();
-                AvailableLanguages availableLanguages = new AvailableLanguages(getActivity());
+
                 TranslatedWords words;
-                addToDb(mTranslateInputEditText.getText().toString(), mTranslateOutputTextView.getText().toString(), availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge), true);
+                addToDb(mTranslateInputEditText.getText().toString(), mTranslateOutputTextView.getText().toString(), getDirection(getActivity()), true);
                 //// TODO: 08.04.2017  make yellow icon after click
 
             }
@@ -370,6 +397,8 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         mShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                lookInDictionary(mTranslateInputEditText.getText().toString(), getDirection(getActivity()));
+                addToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), "ru-en", false);
                 Toast.makeText(getActivity(), "share", Toast.LENGTH_SHORT).show();
             }
         });
@@ -377,6 +406,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             @Override
             public void onClick(View view) {
 
+                lookInDictionary(mTranslateInputEditText.getText().toString(), getDirection(getActivity()));
                 Toast.makeText(getActivity(), "copy", Toast.LENGTH_SHORT).show();
 
             }
@@ -576,13 +606,13 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         if (!TextUtils.isEmpty(text)) {
             resetVocalizer();
             if (lang.equals(getResources().getString(R.string.ru))) {
-                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.RUSSIAN, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE,ConstantManager.SPEECH_VOICE_ZAHAR));
-            } else if (lang.equals(getResources().getString(R.string.en))) {
-                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.ENGLISH, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE,ConstantManager.SPEECH_VOICE_ZAHAR));
+                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.RUSSIAN, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE, ConstantManager.SPEECH_VOICE_ZAHAR));
+            } else if (lang.equals(getResources().getString(en))) {
+                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.ENGLISH, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE, ConstantManager.SPEECH_VOICE_ZAHAR));
             } else if (lang.equals(getResources().getString(R.string.uk))) {
-                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.UKRAINIAN, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE,ConstantManager.SPEECH_VOICE_ZAHAR));
+                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.UKRAINIAN, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE, ConstantManager.SPEECH_VOICE_ZAHAR));
             } else if (lang.equals(getResources().getString(R.string.tr))) {
-                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.TURKISH, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE,ConstantManager.SPEECH_VOICE_ZAHAR));
+                mVocalizer = Vocalizer.createVocalizer(Vocalizer.Language.TURKISH, text, true, mPreferences.getString(ConstantManager.SPEECH_VOICE, ConstantManager.SPEECH_VOICE_ZAHAR));
             }
             mVocalizer.setListener(this);
             mVocalizer.start();
@@ -605,7 +635,6 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             public void onResponse(Call<TranslateResponse> call, Response<TranslateResponse> response) {
                 if (response.code() == 200) {
                     mTranslateOutputTextView.setText(response.body().getText());
-                    addToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), lang, false);
                 }
             }
 
@@ -627,16 +656,17 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
 
     public void lookInDictionary(String text, String lang) {
         //// TODO: make async
-        if (!Utils.isMoreTwoWords(text)) {
+        if (!Utils.isMoreTwoWords(text)&&!TextUtils.isEmpty(text)) {
             YandexDictApi dictApi = RetroClient.getYandexDictApi();
             Call<LookUpResponse> lookUpResponseCall = dictApi.lookup(ConstantManager.KEY_API_DICT, lang, text);
             lookUpResponseCall.enqueue(new Callback<LookUpResponse>() {
                 @Override
                 public void onResponse(Call<LookUpResponse> call, Response<LookUpResponse> response) {
                     if (response.code() == 200) {
-                        Toast.makeText(getActivity(), "555", Toast.LENGTH_SHORT).show();
-                        resetDictionary();
+                        //      Toast.makeText(getActivity(), "555", Toast.LENGTH_SHORT).show();
                         addDictionary(response.body());
+//                        resetDictionary();
+//                        addDictionary(response.body());
 
                     }
                     if (response.code() != 200)
@@ -651,67 +681,139 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         }
     }
 
-    private void addToDb(String inputText, String translatedText, String directionTranslate, boolean isFavorits) {
+    private void addToDb(final String inputText, final String translatedText, final String directionTranslate, final boolean isFavorits) {
         //TODO: make async
+        if (!TextUtils.isEmpty(inputText)) {
+            mRealm.executeTransactionAsync(new Realm.Transaction() {
+                @Override
+                public void execute(Realm realm) {
+                    if (isFavorits) {
+                        Number currentIdNum = realm.where(FavoritsWord.class).max("Id");
+                        int nextId;
+                        if (currentIdNum == null) {
+                            nextId = 1;
+                        } else {
+                            nextId = currentIdNum.intValue() + 1;
+                        }
+                        FavoritsWord favoritsWord = realm.createObject(FavoritsWord.class, nextId);
+                        favoritsWord.setInputText(inputText);
+                        favoritsWord.setTranslatedText(translatedText);
+                        favoritsWord.setDirectionTranslation(directionTranslate);
+                        favoritsWord.setFavorits(true);
+                    }
+                    TranslatedWords word = realm.where(TranslatedWords.class)
+                            .equalTo("InputText", mTranslateInputEditText.getText().toString().trim())
+                            .equalTo("TranslatedText", mTranslateOutputTextView.getText().toString().trim())
+                            .findFirst();
+                    if (word == null) {
+                        Number currentIdNum = realm.where(TranslatedWords.class).max("Id");
+                        int nextId;
+                        if (currentIdNum == null) {
+                            nextId = 1;
+                        } else {
+                            nextId = currentIdNum.intValue() + 1;
+                        }
+                        TranslatedWords newHistoryWord = realm.createObject(TranslatedWords.class, nextId);
+                        newHistoryWord.setInputText(inputText);
+                        newHistoryWord.setTranslatedText(translatedText);
+                        newHistoryWord.setDirectionTranslation(directionTranslate);
+                        newHistoryWord.setFavorits(isFavorits);
+                        realm.copyToRealmOrUpdate(newHistoryWord);
+                        realm.commitTransaction();
+                    } else {
+                        if (word.getFavoritsWord() == null && isFavorits) {
+                            word.setFavorits(true);
+                        }
+                        realm.copyToRealmOrUpdate(word);
+                    }
+                }
+            }, new Realm.Transaction.OnSuccess() {
+                @Override
+                public void onSuccess() {
+                    if (isFavorits) {
+                        mRealm.executeTransactionAsync(new Realm.Transaction() {
+                            @Override
+                            public void execute(Realm realm) {
+                                Number maxFavId = realm.where(FavoritsWord.class).max("Id");
+                                Number maxHistoryId = realm.where(TranslatedWords.class).max("Id");
+                                FavoritsWord lastFavoritsWord = realm.where(FavoritsWord.class).equalTo("Id", maxFavId.intValue()).findFirst();
+                                TranslatedWords lastHistoryWord = realm.where(TranslatedWords.class).equalTo("Id", maxHistoryId.intValue()).findFirst();
+                                lastFavoritsWord.setHistoryWords(lastHistoryWord);
+                                lastHistoryWord.setFavoritsWord(lastFavoritsWord);
+                            }
+                        }, new Realm.Transaction.OnSuccess() {
+                            @Override
+                            public void onSuccess() {
 
-        mRealm.beginTransaction();
-        if (isFavorits) {
-            Number currentIdNum = mRealm.where(FavoritsWord.class).max("Id");
-            int nextId;
-            if (currentIdNum == null) {
-                nextId = 1;
-            } else {
-                nextId = currentIdNum.intValue() + 1;
-            }
-            FavoritsWord favoritsWord = mRealm.createObject(FavoritsWord.class, nextId);
-            favoritsWord.setInputText(inputText);
-            favoritsWord.setTranslatedText(translatedText);
-            favoritsWord.setDirectionTranslation(directionTranslate);
-            favoritsWord.setFavorits(true);
+                            }
+                        }, new Realm.Transaction.OnError() {
+                            @Override
+                            public void onError(Throwable error) {
+                            }
+                        });
+
+                    }
+                }
+            }, new Realm.Transaction.OnError() {
+                @Override
+                public void onError(Throwable error) {
+
+                }
+            });
         }
-        TranslatedWords word = mRealm.where(TranslatedWords.class)
-                .equalTo("InputText", mTranslateInputEditText.getText().toString().trim())
-                .equalTo("TranslatedText", mTranslateOutputTextView.getText().toString().trim())
-                .findFirst();
-        if (word == null) {
-            Number currentIdNum = mRealm.where(TranslatedWords.class).max("Id");
-            int nextId;
-            if (currentIdNum == null) {
-                nextId = 1;
-            } else {
-                nextId = currentIdNum.intValue() + 1;
-            }
-            TranslatedWords newHistoryWord = mRealm.createObject(TranslatedWords.class, nextId);
-            newHistoryWord.setInputText(inputText);
-            newHistoryWord.setTranslatedText(translatedText);
-            newHistoryWord.setDirectionTranslation(directionTranslate);
-            newHistoryWord.setFavorits(isFavorits);
-            mRealm.copyToRealmOrUpdate(newHistoryWord);
-            mRealm.commitTransaction();
-        } else {
-            if (word.getFavoritsWord() == null && isFavorits) {
-                word.setFavorits(true);
-            }
-            mRealm.copyToRealmOrUpdate(word);
-            mRealm.commitTransaction();
+//        mRealm.beginTransaction();
+//        if (isFavorits) {
+//            Number currentIdNum = mRealm.where(FavoritsWord.class).max("Id");
+//            int nextId;
+//            if (currentIdNum == null) {
+//                nextId = 1;
+//            } else {
+//                nextId = currentIdNum.intValue() + 1;
+//            }
+//            FavoritsWord favoritsWord = mRealm.createObject(FavoritsWord.class, nextId);
+//            favoritsWord.setInputText(inputText);
+//            favoritsWord.setTranslatedText(translatedText);
+//            favoritsWord.setDirectionTranslation(directionTranslate);
+//            favoritsWord.setFavorits(true);
+//        }
+//        TranslatedWords word = mRealm.where(TranslatedWords.class)
+//                .equalTo("InputText", mTranslateInputEditText.getText().toString().trim())
+//                .equalTo("TranslatedText", mTranslateOutputTextView.getText().toString().trim())
+//                .findFirst();
+//        if (word == null) {
+//            Number currentIdNum = mRealm.where(TranslatedWords.class).max("Id");
+//            int nextId;
+//            if (currentIdNum == null) {
+//                nextId = 1;
+//            } else {
+//                nextId = currentIdNum.intValue() + 1;
+//            }
+//            TranslatedWords newHistoryWord = mRealm.createObject(TranslatedWords.class, nextId);
+//            newHistoryWord.setInputText(inputText);
+//            newHistoryWord.setTranslatedText(translatedText);
+//            newHistoryWord.setDirectionTranslation(directionTranslate);
+//            newHistoryWord.setFavorits(isFavorits);
+//            mRealm.copyToRealmOrUpdate(newHistoryWord);
+//            mRealm.commitTransaction();
+//        } else {
+//            if (word.getFavoritsWord() == null && isFavorits) {
+//                word.setFavorits(true);
+//            }
+//            mRealm.copyToRealmOrUpdate(word);
+//            mRealm.commitTransaction();
+//        }
+//
+//        if (isFavorits) {
+//            mRealm.beginTransaction();
+//            Number maxFavId = mRealm.where(FavoritsWord.class).max("Id");
+//            Number maxHistoryId = mRealm.where(TranslatedWords.class).max("Id");
+//            FavoritsWord lastFavoritsWord = mRealm.where(FavoritsWord.class).equalTo("Id", maxFavId.intValue()).findFirst();
+//            TranslatedWords lastHistoryWord = mRealm.where(TranslatedWords.class).equalTo("Id", maxHistoryId.intValue()).findFirst();
+//            lastFavoritsWord.setHistoryWords(lastHistoryWord);
+//            lastHistoryWord.setFavoritsWord(lastFavoritsWord);
+//            mRealm.commitTransaction();
+//        }
         }
-
-        if (isFavorits) {
-            mRealm.beginTransaction();
-            Number maxFavId = mRealm.where(FavoritsWord.class).max("Id");
-            Number maxHistoryId = mRealm.where(TranslatedWords.class).max("Id");
-            FavoritsWord lastFavoritsWord = mRealm.where(FavoritsWord.class).equalTo("Id", maxFavId.intValue()).findFirst();
-            TranslatedWords lastHistoryWord = mRealm.where(TranslatedWords.class).equalTo("Id", maxHistoryId.intValue()).findFirst();
-            lastFavoritsWord.setHistoryWords(lastHistoryWord);
-            lastHistoryWord.setFavoritsWord(lastFavoritsWord);
-            mRealm.commitTransaction();
-        }
-
-    }
-
-    public String getInputTranslateText() {
-        return mTranslateInputEditText.getText().toString();
-    }
 
 
     private void resetDictionary() {
@@ -728,6 +830,13 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     private int dpToPx(int dp) {
         DisplayMetrics displayMetrics = getActivity().getResources().getDisplayMetrics();
         return Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+    }
+
+    private String getDirection(Context context) {
+        String inputLangauge = mTolbarLeftTextView.getText().toString();
+        String outputLangauge = mToolbarRightTextView.getText().toString();
+        AvailableLanguages availableLanguages = new AvailableLanguages(context);
+        return availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge);
     }
 
     //region vokalizer.listener

@@ -76,7 +76,7 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
 
             @Override
             protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
-                if (charSequence != null || charSequence.toString().equals("")) {
+                if (charSequence != null) {
                     mFavoritsWords = filterWords(charSequence.toString());
                     notifyDataSetChanged();
                 }
@@ -84,10 +84,11 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
         };
     }
 
-    private RealmResults<FavoritsWord> filterWords(String query) {
+    private RealmResults<FavoritsWord> filterWords(final String query) {
         return mRealm
                 .where(FavoritsWord.class)
-                .beginGroup().contains("InputText", query)
+                .beginGroup()
+                .contains("InputText", query)
                 .or()
                 .contains("TranslatedText", query)
                 .endGroup()
@@ -95,13 +96,19 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
     }
 
     public void remove(int position) {
-        mRealm.beginTransaction();
-        if (mFavoritsWords.get(position).getHistoryWords() != null) {
-            mFavoritsWords.get(position).getHistoryWords().setFavorits(false);
-        }
-        mFavoritsWords.get(position).deleteFromRealm();
-        mRealm.commitTransaction();
-
+        final int id = mFavoritsWords.get(position).getId();
+        mRealm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                FavoritsWord word = realm.where(FavoritsWord.class).equalTo("Id", id).findFirst();
+                if (word != null) {
+                    if (word.getHistoryWords() != null) {
+                        word.getHistoryWords().setFavorits(false);
+                    }
+                    word.deleteFromRealm();
+                }
+            }
+        });
     }
 
     @Override

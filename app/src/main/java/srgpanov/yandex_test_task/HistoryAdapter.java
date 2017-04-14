@@ -1,5 +1,6 @@
 package srgpanov.yandex_test_task;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,6 +23,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
     private RealmResults<TranslatedWords> mTranslatedWords;
     private Realm mRealm;
     private ViewHolder.CustomClickListener mCustomClickListener;
+    Context mContext;
 
 
     //конструктор адаптера, в него передаются данные которые будут биндиться
@@ -30,6 +32,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
         mRealm=realm;
         mTranslatedWords = translatedWords;
         mTranslatedWords.addChangeListener(this);
+
     }
 
     @Override
@@ -89,10 +92,15 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
                 .findAll();
     }
 
-    public void remove(int position) {
-        mRealm.beginTransaction();
-        mTranslatedWords.get(position).deleteFromRealm();
-        mRealm.commitTransaction();
+    public void remove(final int position) {
+        final int id = mTranslatedWords.get(position).getId();
+        mRealm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                if(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst()!=null)
+                realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().deleteFromRealm();
+            }
+        });
     }
 
 

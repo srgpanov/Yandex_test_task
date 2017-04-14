@@ -35,7 +35,7 @@ import srgpanov.yandex_test_task.R;
  * Created by Пан on 28.03.2017.
  */
 
-public class BookmarksFragment extends android.app.Fragment {
+public class FavoritsFragment extends android.app.Fragment {
     private RecyclerView mRecyclerViewFavorits;
     private SearchView mSearchView;
     private Toolbar mFavoritsToolbar;
@@ -62,7 +62,7 @@ public class BookmarksFragment extends android.app.Fragment {
 
 
     private void setupRecycleView() {
-        mFavoritsWords = mRealm.where(FavoritsWord.class).findAll();
+        mFavoritsWords = mRealm.where(FavoritsWord.class).findAllAsync();
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerViewFavorits.setLayoutManager(linearLayoutManager);
         mRecyclerViewFavorits.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
@@ -151,6 +151,7 @@ public class BookmarksFragment extends android.app.Fragment {
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 int swipedPosition = viewHolder.getAdapterPosition();
+
                 FavoritsAdapter adapter = (FavoritsAdapter) mRecyclerViewFavorits.getAdapter();
 //                boolean undoOn = adapter.isUndoOn();
 //                if (undoOn) {
