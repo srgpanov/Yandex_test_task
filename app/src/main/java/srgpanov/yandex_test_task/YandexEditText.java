@@ -5,8 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
-import android.util.TypedValue;
 
 /**
  * Created by Пан on 26.03.2017.
@@ -90,15 +88,12 @@ public class YandexEditText extends android.support.v7.widget.AppCompatEditText 
     private void init() {
 
         mPaint = new Paint();
-//        mPaint.setColor(getResources().getColor(R.color.grey_light));
         mPaint.setColor(getResources().getColor(R.color.grey_light));
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setStrokeWidth(getSizeInDp(1));
         mRect=new Rect();
     }
-    private float getDpSize (int pixel){
-        DisplayMetrics dm = getResources().getDisplayMetrics() ;
-        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, pixel, dm);
+
     }
-}
+
 

@@ -122,5 +122,9 @@
     <string name="curent_voice">Текущий голос: </string>
     <string name="sintez_voice">Синтезатор речи</string>
     <string name="curent_delay"> скорость перевода</string>
+    <string name="check_intenet_conection">Проверьте соеденение с интернетом</string>
+    <string name="favorits">Избранное</string>
+    <string name="recently_used">Недавно использованные</string>
+    <string name="all_langauge">Все языки</string>
 
 </resources>

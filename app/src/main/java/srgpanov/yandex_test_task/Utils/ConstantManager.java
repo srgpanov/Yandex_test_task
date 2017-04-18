@@ -12,6 +12,7 @@ public interface ConstantManager {
     String KEY_API_DICT = "dict.1.1.20170409T185108Z.79d5015c882fb26d.aca756c619f2b0d51e86ce223f31aa23add5ae9c";
     String BASE_TRANSLATE_URL = "https://translate.yandex.net/api/v1.5/tr.json/";
     String BASE_DICT_URL = "https://dictionary.yandex.net/api/v1/dicservice.json/";
+    //todo сделать изменение ключа из настроек
 
     String FRAGMENT_TRANSLATE = "translate";
     String FRAGMENT_HISTORY = "history";
@@ -45,4 +46,5 @@ public interface ConstantManager {
     int PERMISSION_REQUEST_SETTINGS_CODE = 103;
 
     String CURRENT_FRAGMENT ="current_fragment" ;
+    String LAST_WORD_ID = "last_word";
 }

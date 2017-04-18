@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
+import io.realm.RealmModel;
 import io.realm.RealmResults;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
 
@@ -75,7 +76,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
             @Override
             protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
                 if (charSequence != null || charSequence.toString().equals("")) {
-                    mTranslatedWords = filterWords(charSequence.toString());
+                    mTranslatedWords = filterWords(charSequence.toString().toLowerCase());
                     notifyDataSetChanged();
                 }
             }
@@ -85,15 +86,16 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
     private RealmResults<TranslatedWords> filterWords(String query) {
         return mRealm
                 .where(TranslatedWords.class)
-                .beginGroup().contains("InputText", query)
+                .beginGroup().contains("InputText", query.toLowerCase())
                 .or()
-                .contains("TranslatedText", query)
+                .contains("TranslatedText", query.toLowerCase())
                 .endGroup()
                 .findAll();
     }
 
     public void remove(final int position) {
         final int id = mTranslatedWords.get(position).getId();
+        final TranslatedWords words = mRealm.where(TranslatedWords.class).equalTo("Id", id).findFirst();
         mRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
@@ -101,12 +103,19 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
                 realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().deleteFromRealm();
             }
         });
+        words.addChangeListener(new RealmChangeListener<RealmModel>() {
+            @Override
+            public void onChange(RealmModel element) {
+                notifyItemRemoved(position);
+                words.removeAllChangeListeners();
+            }
+        });
+
     }
 
 
     @Override
     public void onChange(Object element) {
-        notifyDataSetChanged();
     }
 
     //создаём ViewHolder, в нём находим все View нашео итема

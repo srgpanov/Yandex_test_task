@@ -18,7 +18,9 @@
             android:id="@+id/toolbar_input_lang_activity"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/primary"/>
+            android:background="@color/primary"
+            app:titleTextColor="@color/primary_text"
+            />
     </android.support.design.widget.AppBarLayout>
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view_choose_lang"

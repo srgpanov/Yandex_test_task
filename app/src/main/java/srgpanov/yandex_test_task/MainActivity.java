@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private HistoryFragment mHistoryFragment;
     private FavoritsFragment mFavoritsFragment;
     private SettingFragmentContainer mSettingFragmentContainer;
+    private int wordLastId;
 
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
@@ -62,8 +63,12 @@ public class MainActivity extends AppCompatActivity {
         mFavoritsFragment = new FavoritsFragment();
         mSettingFragmentContainer = new SettingFragmentContainer();
         loadLastFragment(savedInstanceState);
+        if (savedInstanceState!=null){
+            wordLastId=savedInstanceState.getInt(ConstantManager.LAST_WORD_ID);
+        }
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+
 
     }
 
@@ -98,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(ConstantManager.CURRENT_FRAGMENT, mCurrentFragment);
+        outState.putInt(ConstantManager.LAST_WORD_ID,wordLastId);
     }
 
     private void changeFragment(int position) {
@@ -134,4 +140,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public int getWordLastId() {
+        return wordLastId;
+    }
+
+    public void setWordLastId(int wordLastId) {
+        this.wordLastId = wordLastId;
+    }
 }

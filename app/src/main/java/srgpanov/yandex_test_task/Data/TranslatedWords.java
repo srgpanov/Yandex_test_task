@@ -1,7 +1,9 @@
 package srgpanov.yandex_test_task.Data;
 
+import io.realm.RealmList;
 import io.realm.RealmObject;
 import io.realm.annotations.PrimaryKey;
+import srgpanov.yandex_test_task.Data.Dictionary.Defenition;
 
 /**
  * Created by Пан on 30.03.2017.
@@ -15,6 +17,16 @@ public class TranslatedWords extends RealmObject {
     private String DirectionTranslation;
     private boolean Favorits;
     private FavoritsWord mFavoritsWord;
+
+    public RealmList<Defenition> getDefenitions() {
+        return mDefenitions;
+    }
+
+    public void setDefenitions(RealmList<Defenition> defenitions) {
+        mDefenitions = defenitions;
+    }
+
+    private RealmList<Defenition> mDefenitions;
 
     public FavoritsWord getFavoritsWord() {
         return mFavoritsWord;

@@ -77,7 +77,7 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
             @Override
             protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
                 if (charSequence != null) {
-                    mFavoritsWords = filterWords(charSequence.toString());
+                    mFavoritsWords = filterWords(charSequence.toString().toLowerCase());
                     notifyDataSetChanged();
                 }
             }
@@ -88,9 +88,9 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
         return mRealm
                 .where(FavoritsWord.class)
                 .beginGroup()
-                .contains("InputText", query)
+                .contains("InputText", query.toLowerCase())
                 .or()
-                .contains("TranslatedText", query)
+                .contains("TranslatedText", query.toLowerCase())
                 .endGroup()
                 .findAll();
     }
@@ -109,11 +109,12 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
                 }
             }
         });
+        notifyItemRemoved(position);
     }
 
     @Override
     public void onChange(Object element) {
-        notifyDataSetChanged();
+      //  notifyDataSetChanged();
     }
 
 

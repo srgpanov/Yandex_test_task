@@ -7,13 +7,14 @@
     android:layout_height="match_parent"
     android:theme="@style/AppTheme"
     tools:context="srgpanov.yandex_test_task.MainActivity">
+
     <android.support.design.widget.AppBarLayout
         android:id="@+id/appbar_layout_translate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:fitsSystemWindows="false"
-        android:theme="@style/AppTheme.AppBarOverlay"
-        android:layout_alignParentTop="true">
+        android:theme="@style/AppTheme.AppBarOverlay">
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/layout_toolbar_translate"
@@ -45,8 +46,8 @@
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
                     android:layout_toLeftOf="@id/toolbar_img_view"
-                    android:gravity="right"
                     android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="right"
                     android:text="@string/toolbar_right_text_view"
                     android:textColor="@color/primary_text"/>
 
@@ -56,9 +57,9 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:gravity="left"
                     android:layout_toRightOf="@id/toolbar_img_view"
                     android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="left"
                     android:text="@string/toolbar_left_text_view"
                     android:textColor="@color/primary_text"/>
             </RelativeLayout>
@@ -69,124 +70,135 @@
         android:id="@+id/anchor"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_centerInParent="true" />
-    <RelativeLayout
-        android:id="@+id/input_edit_text_container"
+        android:layout_centerInParent="true"/>
+
+    <android.support.v4.widget.NestedScrollView
+        android:id="@+id/neste_translate"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
         android:layout_below="@id/appbar_layout_translate"
         android:layout_toLeftOf="@id/anchor"
         android:layout_toStartOf="@id/anchor"
+        android:fillViewport="true"
         >
 
-        <srgpanov.yandex_test_task.YandexEditText
-            android:id="@+id/input_edit_text"
+        <RelativeLayout
+            android:id="@+id/input_edit_text_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@null"
-            android:gravity="start|top"
-            android:minHeight="128dp"
-            />
+            android:layout_height="match_parent">
 
-        <ImageView
-            android:id="@+id/ic_mic"
-            style="@style/icon_style"
-            android:layout_alignEnd="@id/input_edit_text"
-            android:layout_alignRight="@id/input_edit_text"
-            android:layout_alignTop="@id/input_edit_text"
-            app:srcCompat="@drawable/ic_mic_grey_24dp"
-            />
+            <srgpanov.yandex_test_task.YandexEditText
+                android:id="@+id/input_edit_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@null"
+                android:gravity="start|top"
+                android:minHeight="128dp"
+                />
 
-        <ImageView
-            android:id="@+id/ic_speaker_input"
-            style="@style/icon_style"
-            android:layout_alignEnd="@id/input_edit_text"
-            android:layout_alignRight="@id/input_edit_text"
-            android:layout_below="@id/ic_mic"
-            app:srcCompat="@drawable/ic_volume_up_grey_24dp"
-            />
+            <ImageView
+                android:id="@+id/ic_mic"
+                style="@style/icon_style"
+                android:layout_alignEnd="@id/input_edit_text"
+                android:layout_alignRight="@id/input_edit_text"
+                android:layout_alignTop="@id/input_edit_text"
+                app:srcCompat="@drawable/ic_mic_grey_24dp"
+                />
 
-        <ImageView
-            android:id="@+id/ic_clear"
-            style="@style/icon_style"
-            android:layout_alignBottom="@id/input_edit_text"
-            android:layout_alignLeft="@id/input_edit_text"
-            android:layout_alignStart="@id/input_edit_text"
-            app:srcCompat="@drawable/ic_clear_grey_24dp"
-            />
-    </RelativeLayout>
-<android.support.v4.widget.NestedScrollView
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_below="@id/appbar_layout_translate"
-    android:layout_toRightOf="@id/anchor">
-    <RelativeLayout
+            <ImageView
+                android:id="@+id/ic_speaker_input"
+                style="@style/icon_style"
+                android:layout_alignEnd="@id/input_edit_text"
+                android:layout_alignRight="@id/input_edit_text"
+                android:layout_below="@id/ic_mic"
+                app:srcCompat="@drawable/ic_speaker_grey_24dp"
+                />
+
+            <ImageView
+                android:id="@+id/ic_clear"
+                style="@style/icon_style"
+                android:layout_alignBottom="@id/input_edit_text"
+                android:layout_alignLeft="@id/input_edit_text"
+                android:layout_alignStart="@id/input_edit_text"
+                app:srcCompat="@drawable/ic_clear_grey_24dp"
+                />
+        </RelativeLayout>
+    </android.support.v4.widget.NestedScrollView>
+
+    <android.support.v4.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <TextView
-            android:id="@+id/output_txt_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_marginRight="48dp"
-            android:fontFamily="sans-serif"
-            android:paddingLeft="@dimen/activity_horizontal_margin"
-            android:paddingStart="@dimen/activity_horizontal_margin"
-            android:paddingTop="@dimen/activity_vertical_margin"
-            android:textColor="@android:color/black"
-            android:textSize="16sp"/>
-
-        <ImageView
-            android:id="@+id/ic_speaker_output"
-            style="@style/icon_style"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"
-            app:srcCompat="@drawable/ic_volume_up_grey_24dp"
-            />
-
-        <ImageView
-            android:id="@+id/ic_bookmark"
-            style="@style/icon_style"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/ic_speaker_output"
-            app:srcCompat="@drawable/ic_bookmark_grey_24dp"
-            />
-
-        <ImageView
-            android:id="@+id/ic_share"
-            style="@style/icon_style"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/ic_bookmark"
-            app:srcCompat="@drawable/ic_share_grey_24dp"
-            />
-
-        <ImageView
-            android:id="@+id/ic_content_copy"
-            style="@style/icon_style"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_below="@id/ic_share"
-            app:srcCompat="@drawable/ic_content_copy_grey_24dp"
-            />
+        android:layout_height="match_parent"
+        android:layout_below="@id/appbar_layout_translate"
+        android:layout_toRightOf="@id/anchor">
 
         <RelativeLayout
-            android:id="@+id/dictionary_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"
-            android:layout_below="@id/output_txt_view"
-            android:layout_toLeftOf="@id/ic_content_copy"
-            android:layout_toStartOf="@id/ic_content_copy"
-            android:paddingBottom="@dimen/activity_vertical_margin"
-            android:paddingLeft="@dimen/activity_horizontal_margin"
-            android:paddingStart="@dimen/activity_horizontal_margin"
-            android:paddingTop="@dimen/spacing_small_8">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/output_txt_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_marginRight="48dp"
+                android:fontFamily="sans-serif"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingStart="@dimen/activity_horizontal_margin"
+                android:paddingTop="@dimen/activity_vertical_margin"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"/>
+
+            <ImageView
+                android:id="@+id/ic_speaker_output"
+                style="@style/icon_style"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentTop="true"
+                app:srcCompat="@drawable/ic_speaker_grey_24dp"
+                />
+
+            <ImageView
+                android:id="@+id/ic_bookmark"
+                style="@style/icon_style"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_below="@id/ic_speaker_output"
+                app:srcCompat="@drawable/ic_bookmark_grey_24dp"
+                />
+
+            <ImageView
+                android:id="@+id/ic_share"
+                style="@style/icon_style"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_below="@id/ic_bookmark"
+                app:srcCompat="@drawable/ic_share_grey_24dp"
+                />
+
+            <ImageView
+                android:id="@+id/ic_content_copy"
+                style="@style/icon_style"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:layout_below="@id/ic_share"
+                app:srcCompat="@drawable/ic_content_copy_grey_24dp"
+                />
+
+            <RelativeLayout
+                android:id="@+id/dictionary_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
+                android:layout_below="@id/output_txt_view"
+                android:layout_toLeftOf="@id/ic_content_copy"
+                android:layout_toStartOf="@id/ic_content_copy"
+                android:paddingBottom="@dimen/activity_vertical_margin"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingStart="@dimen/activity_horizontal_margin"
+                android:paddingTop="@dimen/spacing_small_8">
+            </RelativeLayout>
         </RelativeLayout>
-    </RelativeLayout>
-</android.support.v4.widget.NestedScrollView>
+    </android.support.v4.widget.NestedScrollView>
 </RelativeLayout>

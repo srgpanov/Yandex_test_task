@@ -13,6 +13,7 @@
         android:layout_centerVertical="true"
         android:layout_marginLeft="@dimen/list_item_padding_16_dp"
         android:layout_marginStart="@dimen/list_item_padding_16_dp"
+        android:textStyle="bold"
         android:layout_toLeftOf="@+id/choose_lang_image_view"
         android:gravity="left|center_vertical"
         android:textSize="16sp"/>

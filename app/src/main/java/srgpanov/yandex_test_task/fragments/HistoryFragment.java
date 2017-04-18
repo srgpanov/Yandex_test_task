@@ -101,6 +101,7 @@ public class HistoryFragment extends android.app.Fragment {
                 switch (view.getId()) {
                     case R.id.item_image_view:
                         setFavoritWord(position);
+                        mHistoryAdapter.notifyItemChanged(position);
                         break;
                     case R.id.item_primary_text:
                         Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();

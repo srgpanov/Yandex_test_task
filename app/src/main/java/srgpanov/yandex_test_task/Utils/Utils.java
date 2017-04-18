@@ -1,5 +1,9 @@
 package srgpanov.yandex_test_task.Utils;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +46,11 @@ public class Utils {
 
             default:return text;
         }
+    }
+    public static boolean isNetworkAvailable(Context context){
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        return activeNetwork!=null && activeNetwork.isConnectedOrConnecting();
     }
 
 }

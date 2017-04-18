@@ -15,8 +15,6 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -32,10 +30,14 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import io.realm.Realm;
+import io.realm.RealmChangeListener;
+import io.realm.RealmList;
+import io.realm.RealmModel;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -46,9 +48,14 @@ import ru.yandex.speechkit.RecognizerListener;
 import ru.yandex.speechkit.Synthesis;
 import ru.yandex.speechkit.Vocalizer;
 import ru.yandex.speechkit.VocalizerListener;
+import srgpanov.yandex_test_task.Data.Dictionary.Defenition;
+import srgpanov.yandex_test_task.Data.Dictionary.Means;
+import srgpanov.yandex_test_task.Data.Dictionary.Synonymous;
+import srgpanov.yandex_test_task.Data.Dictionary.Transcript;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
 import srgpanov.yandex_test_task.InputLangActivity;
+import srgpanov.yandex_test_task.MainActivity;
 import srgpanov.yandex_test_task.R;
 import srgpanov.yandex_test_task.Utils.AvailableLanguages;
 import srgpanov.yandex_test_task.Utils.ConstantManager;
@@ -83,7 +90,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     private ImageView mClear;
     private ImageView mInputSpeaker;
     private ImageView mOututSpeaker;
-    private ImageView mBookamark;
+    private ImageView mFavorite;
     private ImageView mShare;
     private ImageView mCopy;
     private TextView mToolbarLeftTextView;
@@ -102,11 +109,13 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     private Timer mTimer;
     private Vocalizer mVocalizer;
     private Recognizer mRecognizer;
+    private boolean isFavoritWord = false;
+    private boolean isSpeakerInput = false;
+    private boolean isSpeakerOutput = false;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         mPreferences = YandexAplication.getPreferences();
     }
 
@@ -116,11 +125,6 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         mRealm = Realm.getDefaultInstance();
         View rootView = inflater.inflate(R.layout.fragment_translate, container, false);
         mTranslateToolbar = (Toolbar) rootView.findViewById(R.id.layout_toolbar_translate);
-        AppCompatActivity activity = (AppCompatActivity) getActivity();
-        activity.setSupportActionBar(mTranslateToolbar);
-        ActionBar actionBar = activity.getSupportActionBar();
-        actionBar.setDisplayShowTitleEnabled(false);
-        actionBar.setDisplayShowCustomEnabled(true);
         mTranslateContainer = (RelativeLayout) rootView.findViewById(R.id.translate_container);
         mDictionaryContainer = (RelativeLayout) rootView.findViewById(R.id.dictionary_container);
         mTolbarLeftTextView = (TextView) rootView.findViewById(R.id.toolbar_left_txt_view);
@@ -128,9 +132,93 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         setupButtons(rootView);
         setupTextViews(rootView);
         setupToolbar(rootView);
-
         return rootView;
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        //добавляем TextWatcher для задержки обработки вводимых данных пользователем
+        mTranslateInputEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                if (mTimer != null) {
+                    mTimer.cancel();
+                    mTimer.purge();
+                }
+                resetVocalizer();
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                final Editable e = editable;
+                mTimer = new Timer();
+                //создаём таймер, в кооторый стартует если пользователь не вводит текст 3 секунды
+                //TODO: при переключении фрагмента падает приложение
+                mTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (!TextUtils.isEmpty(e.toString())) {
+                            translateText(e.toString(), getDirection(getActivity())); // перевод текста и запись в базу данных запускается в отдельном потоке
+                        }
+                    }
+                }, mPreferences.getInt(ConstantManager.DELAY_TO_TRANSLATE, ConstantManager.DELAY_NORMAL));
+
+                if (isFavoritWord) {
+                    mFavorite.setImageResource(R.drawable.ic_bookmark_grey_24dp);
+                    isFavoritWord = false;
+                }
+            }
+        });
+        mTranslateOutputTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                resetDictionary();
+                lookInDictionary(mTranslateInputEditText.getText().toString(), getDirection(getActivity()));
+                addToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), getDirection(getActivity()), false);
+
+            }
+
+        });
+        if(((MainActivity) getActivity()).getWordLastId()!=0){
+            TranslatedWords words = mRealm.where(TranslatedWords.class).equalTo("Id",((MainActivity) getActivity()).getWordLastId()).findFirst();
+            mTranslateInputEditText.setText(words.getInputText());
+            mTranslateOutputTextView.setText(words.getTranslatedText());
+            addDictionary(words);
+        }
+//        TranslatedWords words = mRealm.where(TranslatedWords.class).equalTo("Id", lastWordId).findFirst();
+//        if(words!=null){
+//            Toast.makeText(getActivity(), String.valueOf(lastWordId + 100), Toast.LENGTH_SHORT).show();
+//            mTranslateInputEditText.setText(words.getInputText());
+//            mTranslateOutputTextView.setText(words.getTranslatedText());
+//            addDictionary(words);}
+
+//        words.addChangeListener(new RealmChangeListener<RealmModel>() {
+//            @Override
+//            public void onChange(RealmModel element) {
+//                mTranslateInputEditText.setText(words.getInputText());
+//                mTranslateOutputTextView.setText(words.getTranslatedText());
+//                addDictionary(words);
+//                words.removeAllChangeListeners();
+//            }
+//        });
+    }
+
 
     private void setupToolbar(View rootview) {
         mToolbarLeftTextView = (TextView) rootview.findViewById(R.id.toolbar_left_txt_view);
@@ -164,7 +252,8 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
                 editor.putString(ConstantManager.TOOLBAR_RIGHT_TEXT_VIEW, mToolbarRightTextView.getText().toString());
                 editor.apply();
                 swapTranslatedText();
-                lookInDictionary(mTranslateInputEditText.getText().toString(), tempLangauge);
+                resetDictionary();
+                lookInDictionary(mTranslateInputEditText.getText().toString(), getDirection(getActivity()));
             }
         });
     }
@@ -193,26 +282,6 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         }
     }
 
-    @Override
-    public void onViewStateRestored(@Nullable Bundle savedInstanceState) {
-        super.onViewStateRestored(savedInstanceState);
-        Toast.makeText(getActivity(), "onViewStateRestored", Toast.LENGTH_SHORT).show();
-        if (savedInstanceState != null) {
-            mTranslateInputEditText.setText(savedInstanceState.getString(ConstantManager.INPUT_TEXT_VIEW));
-
-            mTranslateOutputTextView.setText(savedInstanceState.getString(ConstantManager.OUTPUT_TEXT_VIEW));
-
-            Toast.makeText(getActivity(), "Restore", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putString(ConstantManager.INPUT_TEXT_VIEW, mTranslateInputEditText.getText().toString());
-        outState.putString(ConstantManager.OUTPUT_TEXT_VIEW, mTranslateOutputTextView.getText().toString());
-        Toast.makeText(getActivity(), "out", Toast.LENGTH_SHORT).show();
-    }
 
     @Override
     public void onPause() {
@@ -221,16 +290,14 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             mTimer.cancel();
             mTimer.purge();
         }
-
         resetRecognizer();
         resetVocalizer();
-
     }
-
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+
         mRealm.close();
     }
 
@@ -239,12 +306,10 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         boolean allowed = true;
         switch (requestCode) {
             case ConstantManager.REQUEST_PERMISSION_CODE_RECORD_AUDIO:
-
                 for (int res : grantResults) {
                     // если ползователь дал все разрешения
                     allowed = allowed && (res == PackageManager.PERMISSION_GRANTED);
                 }
-
                 break;
             default:
                 // если пользователь не дал разрешения
@@ -281,63 +346,6 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
         }
 
-        //добавляем TextWatcher для задержки обработки вводимых данных пользователем
-        mTranslateInputEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (mTimer != null) {
-                    mTimer.cancel();
-                    mTimer.purge();
-                }
-                resetVocalizer();
-                resetDictionary();
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                final Editable e = editable;
-                mTimer = new Timer();
-
-//                if (!TextUtils.isEmpty(e.toString())) {
-//
-//                    translateText(e.toString(), "ru-en"); // перевод текста и запись в базу данных запускается в отдельном потоке
-//                }
-                //создаём таймер, в кооторый стартует если пользователь не вводит текст 3 секунды
-                //TODO: при переключении фрагмента падает приложение
-                mTimer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        if (!TextUtils.isEmpty(e.toString())) {
-
-                            translateText(e.toString(), getDirection(getActivity())); // перевод текста и запись в базу данных запускается в отдельном потоке
-                        }
-                    }
-                }, mPreferences.getInt(ConstantManager.DELAY_TO_TRANSLATE, ConstantManager.DELAY_NORMAL));
-            }
-        });
-        mTranslateOutputTextView.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                lookInDictionary(mTranslateInputEditText.getText().toString(), getDirection(getActivity()));
-                addToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), getDirection(getActivity()), false);
-
-            }
-        });
     }
 
 
@@ -346,7 +354,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         mInputSpeaker = (ImageView) rootView.findViewById(R.id.ic_speaker_input);
         mClear = (ImageView) rootView.findViewById(R.id.ic_clear);
         mOututSpeaker = (ImageView) rootView.findViewById(R.id.ic_speaker_output);
-        mBookamark = (ImageView) rootView.findViewById(R.id.ic_bookmark);
+        mFavorite = (ImageView) rootView.findViewById(R.id.ic_bookmark);
         mShare = (ImageView) rootView.findViewById(R.id.ic_share);
         mCopy = (ImageView) rootView.findViewById(R.id.ic_content_copy);
 
@@ -361,8 +369,12 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             public void onClick(View view) {
                 if (mVocalizer != null) {
                     resetVocalizer();
+                    isSpeakerInput = false;
+                    mInputSpeaker.setImageResource(R.drawable.ic_speaker_grey_24dp);
                 } else {
-                    startSpeech(((TextView) getActivity().findViewById(R.id.toolbar_left_txt_view)).getText().toString(), mTranslateInputEditText.getText().toString());
+                    startSpeech(mToolbarLeftTextView.getText().toString(), mTranslateInputEditText.getText().toString());
+                    isSpeakerInput = true;
+                    mInputSpeaker.setImageResource(R.drawable.ic_speaker_yellow_24dp);
                 }
             }
         });
@@ -379,26 +391,33 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             public void onClick(View view) {
                 if (mVocalizer != null) {
                     resetVocalizer();
+                    isSpeakerOutput = false;
+                    mOututSpeaker.setImageResource(R.drawable.ic_speaker_grey_24dp);
                 } else {
-                    startSpeech(((TextView) getActivity().findViewById(R.id.toolbar_right_txt_view)).getText().toString(), mTranslateOutputTextView.getText().toString());
+                    startSpeech(mToolbarRightTextView.getText().toString(), mTranslateOutputTextView.getText().toString());
+                    isSpeakerOutput = true;
+                    mOututSpeaker.setImageResource(R.drawable.ic_speaker_yellow_24dp);
                 }
             }
         });
-        mBookamark.setOnClickListener(new View.OnClickListener() {
+        mFavorite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                TranslatedWords words;
-                addToDb(mTranslateInputEditText.getText().toString(), mTranslateOutputTextView.getText().toString(), getDirection(getActivity()), true);
-                //// TODO: 08.04.2017  make yellow icon after click
-
+                if (!isFavoritWord) {
+                    mFavorite.setImageResource(R.drawable.ic_bookmark_yellow_24dp);
+                    addToDb(mTranslateInputEditText.getText().toString(), mTranslateOutputTextView.getText().toString(), getDirection(getActivity()), true);
+                    isFavoritWord = true;
+                } else {
+                    mFavorite.setImageResource(R.drawable.ic_bookmark_grey_24dp);
+                    deleteFromFavorits(mTranslateInputEditText.getText().toString(), mTranslateOutputTextView.getText().toString());
+                    isFavoritWord = false;
+                }
             }
         });
         mShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                lookInDictionary(mTranslateInputEditText.getText().toString(), getDirection(getActivity()));
-                addToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), "ru-en", false);
+
                 Toast.makeText(getActivity(), "share", Toast.LENGTH_SHORT).show();
             }
         });
@@ -406,179 +425,27 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             @Override
             public void onClick(View view) {
 
-                lookInDictionary(mTranslateInputEditText.getText().toString(), getDirection(getActivity()));
+                Toast.makeText(getActivity(), String.valueOf(((MainActivity) getActivity()).getWordLastId()), Toast.LENGTH_SHORT).show();
                 Toast.makeText(getActivity(), "copy", Toast.LENGTH_SHORT).show();
 
             }
         });
     }
 
-    private void addDictionary(LookUpResponse body) {
-        if (body != null) {
-            int tr_LastId = -1;//tr - массив переводов
-            int defLastId = -1;//def - массив словарных статей
-            int ts_LastId = -1;//ts - массив транскрипция
-            int numeric_tr_LastId = -1;//ts - массив нумераций занчений
-            int meanLastId = -1;//mean - массив занчений
-            for (int i = 0; i < body.getDef().size(); i++) {
-                //region делаем вьюху для массива словарных статей
-                RelativeLayout.LayoutParams params_def = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                params_def.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                if (i != 0 && body.getDef().get(i - 1).getTr().get(body.getDef().get(i - 1).getTr().size() - 1).getMean() != null) {
-                    params_def.addRule(RelativeLayout.BELOW, meanLastId);
-                } else if (tr_LastId > -1) {
-                    params_def.addRule(RelativeLayout.BELOW, tr_LastId);
-                } else if (defLastId > -1) {
-                    params_def.addRule(RelativeLayout.BELOW, defLastId);
-                }
-                String defString = body.getDef().get(i).getText();
-                TextView defTextView = new TextView(getActivity());
-                defTextView.setText(defString);
-                defTextView.setPadding(0, dpToPx(8), 0, 0);
-                defTextView.setTextColor(getResources().getColor(R.color.primary_text));
-                defTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    defTextView.setId(Utils.generateViewId());
-                } else {
-                    defTextView.setId(View.generateViewId());
-                }
-                defTextView.setLayoutParams(params_def);
-                mDictionaryContainer.addView(defTextView);
-                defLastId = defTextView.getId();
-                //endregion
-                //region делаем вьюху для массива транскрипций
-                if (body.getDef().get(i).getTs() != null) {
-                    RelativeLayout.LayoutParams params_ts = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                    params_ts.addRule(RelativeLayout.RIGHT_OF, defLastId);
-                    params_ts.addRule(RelativeLayout.ALIGN_BOTTOM, defLastId);
-                    TextView tsTextView = new TextView(getActivity());
-                    tsTextView.setText("[" + body.getDef().get(i).getTs() + "]");
-                    tsTextView.setPadding(dpToPx(8), dpToPx(8), 0, 0);
-                    tsTextView.setTextColor(getResources().getColor(R.color.secondary_text));
-                    tsTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        tsTextView.setId(Utils.generateViewId());
-                    } else {
-                        tsTextView.setId(View.generateViewId());
-                    }
-                    tsTextView.setLayoutParams(params_ts);
-                    mDictionaryContainer.addView(tsTextView);
-                    ts_LastId = tsTextView.getId();
-                }
-                //endregion
-                //region делаем вьюху для массива частей речи переводов
-                RelativeLayout.LayoutParams params_pos = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                if (body.getDef().get(i).getPos() != null) {
-                    if (ts_LastId != -1) {
-                        params_pos.addRule(RelativeLayout.RIGHT_OF, ts_LastId);
-                        params_pos.addRule(RelativeLayout.ALIGN_BOTTOM, ts_LastId);
-                    } else {
-                        params_pos.addRule(RelativeLayout.RIGHT_OF, defLastId);
-                        params_pos.addRule(RelativeLayout.ALIGN_BOTTOM, defLastId);
-                    }
-                    TextView posTextView = new TextView(getActivity());
-                    posTextView.setText(Utils.translatePos(body.getDef().get(i).getPos()));
-                    posTextView.setPadding(dpToPx(8), dpToPx(8), 0, 0);
-                    posTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-                    posTextView.setTextColor(getResources().getColor(R.color.green_for_def));
-                    posTextView.setTypeface(null, Typeface.ITALIC);
-                    posTextView.setLayoutParams(params_pos);
-                    mDictionaryContainer.addView(posTextView);
-                }
-                //endregion
-                for (int j = 0; j < body.getDef().get(i).getTr().size(); j++) {
-                    //region делаем вьюху для нумерации масива перевода
-                    if (body.getDef().get(i).getTr().size() > 1) {
-                        RelativeLayout.LayoutParams params_numeric_tr = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        params_numeric_tr.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                        if (j == 0) {
-                            params_numeric_tr.addRule(RelativeLayout.BELOW, defLastId);
-                        } else {
-                            if (body.getDef().get(i).getTr().get(j - 1).getMean() != null) {
-                                params_numeric_tr.addRule(RelativeLayout.BELOW, meanLastId);
-                            } else
-                                params_numeric_tr.addRule(RelativeLayout.BELOW, tr_LastId);
-                        }
-                        TextView numericTrTextiew = new TextView(getActivity());
-                        numericTrTextiew.setText(String.valueOf(j + 1));
-                        numericTrTextiew.setTextColor(getActivity().getResources().getColor(R.color.secondary_text));
-                        numericTrTextiew.setPadding(0, 0, dpToPx(8), 0);
-                        numericTrTextiew.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                            numericTrTextiew.setId(Utils.generateViewId());
-                        } else {
-                            numericTrTextiew.setId(View.generateViewId());
-                        }
-                        numericTrTextiew.setLayoutParams(params_numeric_tr);
-                        mDictionaryContainer.addView(numericTrTextiew);
-                        numeric_tr_LastId = numericTrTextiew.getId();
-                    }
-                    //endregion
-                    //region делаем вьюху для масива перевода и синнимов\
-                    //добавляем синнимы
-                    String Tr_and_Syn = body.getDef().get(i).getTr().get(j).getText();
-                    if (body.getDef().get(i) != null) {
-                        if (body.getDef().get(i).getTr().get(j).getSyn() != null) {
-                            for (int syn = 0; syn < body.getDef().get(i).getTr().get(j).getSyn().size(); syn++) {
-                                Tr_and_Syn = Tr_and_Syn + ", " + body.getDef().get(i).getTr().get(j).getSyn().get(syn).getText();
-                            }
-                        }
-                    }
-                    RelativeLayout.LayoutParams params_tr = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                    if (body.getDef().get(i).getTr().size() == 1) {
-                        params_tr.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-                        params_tr.addRule(RelativeLayout.BELOW, defLastId);
-                    } else {
-                        if (numeric_tr_LastId > -1) {
-                            params_tr.addRule(RelativeLayout.RIGHT_OF, numeric_tr_LastId);
-                            params_tr.addRule(RelativeLayout.ALIGN_TOP, numeric_tr_LastId);
-                        }
-                    }
-
-                    TextView tr_TextView = new TextView(getActivity());
-                    tr_TextView.setText(Tr_and_Syn);
-                    tr_TextView.setTextColor(getResources().getColor(R.color.blue_for_dictionary));
-                    tr_TextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        tr_TextView.setId(Utils.generateViewId());
-                    } else {
-                        tr_TextView.setId(View.generateViewId());
-                    }
-                    tr_TextView.setLayoutParams(params_tr);
-                    mDictionaryContainer.addView(tr_TextView);
-                    tr_LastId = tr_TextView.getId();
-                    //endregion
-                    //region делаем вьюху для массива занчений
-                    if (body.getDef().get(i).getTr().get(j).getMean() != null) {
-                        RelativeLayout.LayoutParams params_mean = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                        params_mean.addRule(RelativeLayout.ALIGN_LEFT, tr_LastId);
-                        params_mean.addRule(RelativeLayout.BELOW, tr_LastId);
-                        TextView meanTextView = new TextView(getActivity());
-                        String meanString = "";
-                        for (int mean = 0; mean < body.getDef().get(i).getTr().get(j).getMean().size(); mean++) {
-                            if (mean + 1 != body.getDef().get(i).getTr().get(j).getMean().size()) {
-                                meanString += body.getDef().get(i).getTr().get(j).getMean().get(mean).getText() + ", ";
-                            } else
-                                meanString += body.getDef().get(i).getTr().get(j).getMean().get(mean).getText();
-                        }
-                        meanString = "(" + meanString + ")";
-                        meanTextView.setText(meanString);
-                        meanTextView.setTextColor(getResources().getColor(R.color.brown_for_means));
-                        meanTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-                        ;
-                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                            meanTextView.setId(Utils.generateViewId());
-                        } else {
-                            meanTextView.setId(View.generateViewId());
-                        }
-                        meanTextView.setLayoutParams(params_mean);
-                        mDictionaryContainer.addView(meanTextView);
-                        meanLastId = meanTextView.getId();
-                    }
-                    //endregion
+    private void deleteFromFavorits(final String inputText, final String outpuText) {
+        mRealm.executeTransactionAsync(new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                FavoritsWord word = realm.where(FavoritsWord.class)
+                        .equalTo("InputText", inputText)
+                        .equalTo("TranslatedText", outpuText)
+                        .findFirst();
+                if (word != null) {
+                    word.getHistoryWords().setFavorits(false);
+                    word.deleteFromRealm();
                 }
             }
-        }
+        });
     }
 
 
@@ -593,13 +460,6 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             mRecognizer.start();
         }
 
-    }
-
-    private void resetRecognizer() {
-        if (mRecognizer != null) {
-            mRecognizer.cancel();
-            mRecognizer = null;
-        }
     }
 
     private void startSpeech(String lang, String text) {
@@ -619,87 +479,168 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         }
     }
 
-    private void resetVocalizer() {
-        if (mVocalizer != null) {
-            mVocalizer.cancel();
-            mVocalizer = null;
+    public void translateText(String text, final String lang) {
+        if (Utils.isNetworkAvailable(getActivity())) {
+            YandexTranslateApi translateApi = RetroClient.getYandexTranslateApi();
+            Call<TranslateResponse> translateResponseCall = translateApi.translateText(ConstantManager.KEY_API_TRANSLATE, text, lang);
+            translateResponseCall.enqueue(new Callback<TranslateResponse>() {
+                @Override
+                public void onResponse(Call<TranslateResponse> call, Response<TranslateResponse> response) {
+                    if (response.isSuccessful()) {
+                        mTranslateOutputTextView.setText(response.body().getText());
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<TranslateResponse> call, Throwable t) {
+
+                    Toast.makeText(getActivity(), "666", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            Snackbar.make(mTranslateContainer, R.string.check_intenet_conection, Snackbar.LENGTH_SHORT).show();
         }
     }
-
-    public void translateText(String text, final String lang) {
-        //// TODO: make async
-        YandexTranslateApi translateApi = RetroClient.getYandexTranslateApi();
-        Call<TranslateResponse> translateResponseCall = translateApi.translateText(ConstantManager.KEY_API_TRANSLATE, text, lang);
-        translateResponseCall.enqueue(new Callback<TranslateResponse>() {
-            @Override
-            public void onResponse(Call<TranslateResponse> call, Response<TranslateResponse> response) {
-                if (response.code() == 200) {
-                    mTranslateOutputTextView.setText(response.body().getText());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<TranslateResponse> call, Throwable t) {
-
-                Toast.makeText(getActivity(), "666", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
 
     public void swapTranslatedText() {
         String tempString = mTranslateInputEditText.getText().toString();
         mTranslateInputEditText.setText(mTranslateOutputTextView.getText().toString());
         mTranslateOutputTextView.setText(tempString);
+
     }
 
+    public void lookInDictionary(final String text, final String lang) {
+        if (Utils.isNetworkAvailable(getActivity())) {
+            if (!Utils.isMoreTwoWords(text) && !TextUtils.isEmpty(text)) {
+                YandexDictApi dictApi = RetroClient.getYandexDictApi();
+                Call<LookUpResponse> lookUpResponseCall = dictApi.lookup(ConstantManager.KEY_API_DICT, lang, text);
+                lookUpResponseCall.enqueue(new Callback<LookUpResponse>() {
+                    @Override
+                    public void onResponse(Call<LookUpResponse> call, Response<LookUpResponse> response) {
+                        if (response.isSuccessful()) {
+                            if (response.body() != null) {
+                                addDictionaryDb(response.body(), text, lang);
 
-    public void lookInDictionary(String text, String lang) {
-        //// TODO: make async
-        if (!Utils.isMoreTwoWords(text)&&!TextUtils.isEmpty(text)) {
-            YandexDictApi dictApi = RetroClient.getYandexDictApi();
-            Call<LookUpResponse> lookUpResponseCall = dictApi.lookup(ConstantManager.KEY_API_DICT, lang, text);
-            lookUpResponseCall.enqueue(new Callback<LookUpResponse>() {
-                @Override
-                public void onResponse(Call<LookUpResponse> call, Response<LookUpResponse> response) {
-                    if (response.code() == 200) {
-                        //      Toast.makeText(getActivity(), "555", Toast.LENGTH_SHORT).show();
-                        addDictionary(response.body());
-//                        resetDictionary();
-//                        addDictionary(response.body());
-
+                            }
+                        }
+                        if (response.code() != 200)
+                            //todo обработать ошибки
+                            Toast.makeText(getActivity(), "666", Toast.LENGTH_SHORT).show();
                     }
-                    if (response.code() != 200)
-                        Toast.makeText(getActivity(), "666", Toast.LENGTH_SHORT).show();
-                }
 
-                @Override
-                public void onFailure(Call<LookUpResponse> call, Throwable t) {
-                    Toast.makeText(getActivity(), "777", Toast.LENGTH_SHORT).show();
-                }
-            });
+                    @Override
+                    public void onFailure(Call<LookUpResponse> call, Throwable t) {
+                        Toast.makeText(getActivity(), "777", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        } else {
+            Snackbar.make(mTranslateContainer, R.string.check_intenet_conection, Snackbar.LENGTH_SHORT).show();
         }
     }
 
+
+    private void addDictionaryDb(final LookUpResponse body, final String text, final String lang) {
+
+        final List<LookUpResponse.Def> defList = body.getDef();
+
+        Realm.Transaction transactionDict = new Realm.Transaction() {
+            @Override
+            public void execute(Realm realm) {
+                TranslatedWords words = realm.where(TranslatedWords.class).equalTo("InputText", text).equalTo("DirectionTranslation", lang).findFirst();
+                if (words != null) {
+                    RealmList<Defenition> defenitionList = new RealmList<>();
+                    for (int i = 0; i < defList.size(); i++) {
+                        Defenition newDefenition = realm.createObject(Defenition.class);
+                        newDefenition.setWords(words);
+                        newDefenition.setText(defList.get(i).getText());
+                        newDefenition.setPos(defList.get(i).getPos());
+                        newDefenition.setTranscription(defList.get(i).getTs());
+                        if (defList.get(i).getTr() != null) {
+                            RealmList<Transcript> transcriptList = new RealmList<>();
+                            for (int j = 0; j < defList.get(i).getTr().size(); j++) {
+                                Transcript newTranscript = realm.createObject(Transcript.class);
+                                newTranscript.setDefenition(newDefenition);
+                                newTranscript.setText(defList.get(i).getTr().get(j).getText());
+                                newTranscript.setPos(defList.get(i).getTr().get(j).getPos());
+                                newTranscript.setGender(defList.get(i).getTr().get(j).getPos());
+                                newTranscript.setText(defList.get(i).getTr().get(j).getText());
+                                if (defList.get(i).getTr().get(j).getSyn() != null) {
+                                    RealmList<Synonymous> synonymousList = new RealmList<>();
+                                    for (int syn = 0; syn < defList.get(i).getTr().get(j).getSyn().size(); syn++) {
+                                        Synonymous newSynonymous = realm.createObject(Synonymous.class);
+                                        newSynonymous.setTranscript(newTranscript);
+                                        newSynonymous.setText(defList.get(i).getTr().get(j).getSyn().get(syn).getText());
+                                        newSynonymous.setGender(defList.get(i).getTr().get(j).getSyn().get(syn).getGen());
+                                        newSynonymous.setPos(defList.get(i).getTr().get(j).getSyn().get(syn).getPos());
+                                        synonymousList.add(newSynonymous);
+                                    }
+                                    newTranscript.setSyn(synonymousList);
+                                }
+                                if (defList.get(i).getTr().get(j).getMean() != null) {
+                                    RealmList<Means> meansList = new RealmList<>();
+                                    for (int mean = 0; mean < defList.get(i).getTr().get(j).getMean().size(); mean++) {
+                                        Means newMeans = realm.createObject(Means.class);
+                                        newMeans.setTranscript(newTranscript);
+                                        newMeans.setText(defList.get(i).getTr().get(j).getMean().get(mean).getText());
+                                        meansList.add(newMeans);
+                                    }
+                                    newTranscript.setMean(meansList);
+                                }
+                                transcriptList.add(newTranscript);
+                            }
+                            newDefenition.setTr(transcriptList);
+                        }
+
+                        defenitionList.add(newDefenition);
+
+                        words.setDefenitions(defenitionList);
+                    }
+                }
+            }
+
+        };
+        Realm.Transaction.OnSuccess onSuccessAddDict = new Realm.Transaction.OnSuccess() {
+            @Override
+            public void onSuccess() {
+                final TranslatedWords words = mRealm.where(TranslatedWords.class).equalTo("InputText", text).equalTo("DirectionTranslation", lang).findFirstAsync();
+                words.addChangeListener(new RealmChangeListener<RealmModel>() {
+                    @Override
+                    public void onChange(RealmModel element) {
+                        addDictionary(words);
+                        words.removeAllChangeListeners();
+                    }
+                });
+            }
+        };
+        mRealm.executeTransactionAsync(transactionDict, onSuccessAddDict);
+    }
+
+
     private void addToDb(final String inputText, final String translatedText, final String directionTranslate, final boolean isFavorits) {
-        //TODO: make async
         if (!TextUtils.isEmpty(inputText)) {
             mRealm.executeTransactionAsync(new Realm.Transaction() {
                 @Override
                 public void execute(Realm realm) {
                     if (isFavorits) {
-                        Number currentIdNum = realm.where(FavoritsWord.class).max("Id");
-                        int nextId;
-                        if (currentIdNum == null) {
-                            nextId = 1;
-                        } else {
-                            nextId = currentIdNum.intValue() + 1;
+                        FavoritsWord checkFavWord = realm.where(FavoritsWord.class)
+                                .equalTo("InputText", mTranslateInputEditText.getText().toString().trim())
+                                .equalTo("TranslatedText", mTranslateOutputTextView.getText().toString().trim())
+                                .findFirst();
+                        if (checkFavWord == null) {
+                            Number currentIdNum = realm.where(FavoritsWord.class).max("Id");
+                            int nextId;
+                            if (currentIdNum == null) {
+                                nextId = 1;
+                            } else {
+                                nextId = currentIdNum.intValue() + 1;
+                            }
+                            FavoritsWord favoritsWord = realm.createObject(FavoritsWord.class, nextId);
+                            favoritsWord.setInputText(inputText);
+                            favoritsWord.setTranslatedText(translatedText);
+                            favoritsWord.setDirectionTranslation(directionTranslate);
+                            favoritsWord.setFavorits(true);
                         }
-                        FavoritsWord favoritsWord = realm.createObject(FavoritsWord.class, nextId);
-                        favoritsWord.setInputText(inputText);
-                        favoritsWord.setTranslatedText(translatedText);
-                        favoritsWord.setDirectionTranslation(directionTranslate);
-                        favoritsWord.setFavorits(true);
                     }
                     TranslatedWords word = realm.where(TranslatedWords.class)
                             .equalTo("InputText", mTranslateInputEditText.getText().toString().trim())
@@ -730,6 +671,8 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             }, new Realm.Transaction.OnSuccess() {
                 @Override
                 public void onSuccess() {
+                    ((MainActivity) getActivity()).setWordLastId(mRealm.where(TranslatedWords.class).max("Id").intValue());
+
                     if (isFavorits) {
                         mRealm.executeTransactionAsync(new Realm.Transaction() {
                             @Override
@@ -753,72 +696,14 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
                         });
 
                     }
+
                 }
             }, new Realm.Transaction.OnError() {
                 @Override
                 public void onError(Throwable error) {
-
+                    ((MainActivity) getActivity()).setWordLastId(mRealm.where(TranslatedWords.class).max("Id").intValue());
                 }
             });
-        }
-//        mRealm.beginTransaction();
-//        if (isFavorits) {
-//            Number currentIdNum = mRealm.where(FavoritsWord.class).max("Id");
-//            int nextId;
-//            if (currentIdNum == null) {
-//                nextId = 1;
-//            } else {
-//                nextId = currentIdNum.intValue() + 1;
-//            }
-//            FavoritsWord favoritsWord = mRealm.createObject(FavoritsWord.class, nextId);
-//            favoritsWord.setInputText(inputText);
-//            favoritsWord.setTranslatedText(translatedText);
-//            favoritsWord.setDirectionTranslation(directionTranslate);
-//            favoritsWord.setFavorits(true);
-//        }
-//        TranslatedWords word = mRealm.where(TranslatedWords.class)
-//                .equalTo("InputText", mTranslateInputEditText.getText().toString().trim())
-//                .equalTo("TranslatedText", mTranslateOutputTextView.getText().toString().trim())
-//                .findFirst();
-//        if (word == null) {
-//            Number currentIdNum = mRealm.where(TranslatedWords.class).max("Id");
-//            int nextId;
-//            if (currentIdNum == null) {
-//                nextId = 1;
-//            } else {
-//                nextId = currentIdNum.intValue() + 1;
-//            }
-//            TranslatedWords newHistoryWord = mRealm.createObject(TranslatedWords.class, nextId);
-//            newHistoryWord.setInputText(inputText);
-//            newHistoryWord.setTranslatedText(translatedText);
-//            newHistoryWord.setDirectionTranslation(directionTranslate);
-//            newHistoryWord.setFavorits(isFavorits);
-//            mRealm.copyToRealmOrUpdate(newHistoryWord);
-//            mRealm.commitTransaction();
-//        } else {
-//            if (word.getFavoritsWord() == null && isFavorits) {
-//                word.setFavorits(true);
-//            }
-//            mRealm.copyToRealmOrUpdate(word);
-//            mRealm.commitTransaction();
-//        }
-//
-//        if (isFavorits) {
-//            mRealm.beginTransaction();
-//            Number maxFavId = mRealm.where(FavoritsWord.class).max("Id");
-//            Number maxHistoryId = mRealm.where(TranslatedWords.class).max("Id");
-//            FavoritsWord lastFavoritsWord = mRealm.where(FavoritsWord.class).equalTo("Id", maxFavId.intValue()).findFirst();
-//            TranslatedWords lastHistoryWord = mRealm.where(TranslatedWords.class).equalTo("Id", maxHistoryId.intValue()).findFirst();
-//            lastFavoritsWord.setHistoryWords(lastHistoryWord);
-//            lastHistoryWord.setFavoritsWord(lastFavoritsWord);
-//            mRealm.commitTransaction();
-//        }
-        }
-
-
-    private void resetDictionary() {
-        if (mDictionaryContainer.getChildCount() != 0) {
-            mDictionaryContainer.removeAllViews();
         }
     }
 
@@ -827,9 +712,30 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         startActivityForResult(appSettingsIntent, ConstantManager.PERMISSION_REQUEST_SETTINGS_CODE);
     }
 
+
     private int dpToPx(int dp) {
         DisplayMetrics displayMetrics = getActivity().getResources().getDisplayMetrics();
         return Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+    }
+
+    private void resetDictionary() {
+        if (mDictionaryContainer.getChildCount() != 0) {
+            mDictionaryContainer.removeAllViews();
+        }
+    }
+
+    private void resetRecognizer() {
+        if (mRecognizer != null) {
+            mRecognizer.cancel();
+            mRecognizer = null;
+        }
+    }
+
+    private void resetVocalizer() {
+        if (mVocalizer != null) {
+            mVocalizer.cancel();
+            mVocalizer = null;
+        }
     }
 
     private String getDirection(Context context) {
@@ -837,6 +743,10 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
         String outputLangauge = mToolbarRightTextView.getText().toString();
         AvailableLanguages availableLanguages = new AvailableLanguages(context);
         return availableLanguages.langaugeToAbbreviations(inputLangauge, outputLangauge);
+    }
+
+    private void showToast(String text) {
+        Toast.makeText(getActivity(), text, Toast.LENGTH_SHORT).show();
     }
 
     //region vokalizer.listener
@@ -852,12 +762,21 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
 
     @Override
     public void onPlayingBegin(Vocalizer vocalizer) {
-        //// TODO: 09.04.2017 make yellow icon
+        if (isSpeakerInput) mInputSpeaker.setImageResource(R.drawable.ic_speaker_yellow_24dp);
+        if (isSpeakerOutput) mOututSpeaker.setImageResource(R.drawable.ic_speaker_yellow_24dp);
     }
 
     @Override
     public void onPlayingDone(Vocalizer vocalizer) {
         resetVocalizer();
+        if (isSpeakerInput) {
+            mInputSpeaker.setImageResource(R.drawable.ic_speaker_grey_24dp);
+            isSpeakerInput = false;
+        }
+        if (isSpeakerOutput) {
+            mOututSpeaker.setImageResource(R.drawable.ic_speaker_grey_24dp);
+            isSpeakerOutput = false;
+        }
     }
 
     @Override
@@ -917,6 +836,177 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     public void onError(Recognizer recognizer, Error error) {
         Toast.makeText(getActivity(), error.toString(), Toast.LENGTH_SHORT).show();
     }
-//endregion
+
+    //endregion
+    private void addDictionary(TranslatedWords words) {
+        if (words.getDefenitions() != null) {
+            RealmList<Defenition> defList = words.getDefenitions();
+            int tr_LastId = -1;//tr - массив переводов
+            int defLastId = -1;//def - массив словарных статей
+            int ts_LastId = -1;//ts - массив транскрипция
+            int numeric_tr_LastId = -1;//ts - массив нумераций занчений
+            int meanLastId = -1;//mean - массив занчений
+            for (int i = 0; i < defList.size(); i++) {
+                //region делаем вьюху для массива словарных статей
+                RelativeLayout.LayoutParams params_def = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+                params_def.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                if (i != 0 && defList.get(i - 1).getTr().get(defList.get(i - 1).getTr().size() - 1).getMean() != null) {
+                    params_def.addRule(RelativeLayout.BELOW, meanLastId);
+                } else if (tr_LastId > -1) {
+                    params_def.addRule(RelativeLayout.BELOW, tr_LastId);
+                } else if (defLastId > -1) {
+                    params_def.addRule(RelativeLayout.BELOW, defLastId);
+                }
+                String defString = defList.get(i).getText();
+                TextView defTextView = new TextView(getActivity());
+                defTextView.setText(defString);
+                defTextView.setPadding(0, dpToPx(8), 0, 0);
+                defTextView.setTextColor(getResources().getColor(R.color.primary_text));
+                defTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    defTextView.setId(Utils.generateViewId());
+                } else {
+                    defTextView.setId(View.generateViewId());
+                }
+                defTextView.setLayoutParams(params_def);
+                mDictionaryContainer.addView(defTextView);
+                defLastId = defTextView.getId();
+                //endregion
+                //region делаем вьюху для массива транскрипций
+                if (defList.get(i).getTranscription() != null) {
+                    RelativeLayout.LayoutParams params_ts = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+                    params_ts.addRule(RelativeLayout.RIGHT_OF, defLastId);
+                    params_ts.addRule(RelativeLayout.ALIGN_BOTTOM, defLastId);
+                    TextView tsTextView = new TextView(getActivity());
+                    tsTextView.setText("[" + defList.get(i).getTranscription() + "]");
+                    tsTextView.setPadding(dpToPx(8), dpToPx(8), 0, 0);
+                    tsTextView.setTextColor(getResources().getColor(R.color.secondary_text));
+                    tsTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        tsTextView.setId(Utils.generateViewId());
+                    } else {
+                        tsTextView.setId(View.generateViewId());
+                    }
+                    tsTextView.setLayoutParams(params_ts);
+                    mDictionaryContainer.addView(tsTextView);
+                    ts_LastId = tsTextView.getId();
+                }
+                //endregion
+                //region делаем вьюху для массива частей речи переводов
+                RelativeLayout.LayoutParams params_pos = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+                if (defList.get(i).getPos() != null) {
+                    if (ts_LastId != -1) {
+                        params_pos.addRule(RelativeLayout.RIGHT_OF, ts_LastId);
+                        params_pos.addRule(RelativeLayout.ALIGN_BOTTOM, ts_LastId);
+                    } else {
+                        params_pos.addRule(RelativeLayout.RIGHT_OF, defLastId);
+                        params_pos.addRule(RelativeLayout.ALIGN_BOTTOM, defLastId);
+                    }
+                    TextView posTextView = new TextView(getActivity());
+                    posTextView.setText(Utils.translatePos(defList.get(i).getPos()));
+                    posTextView.setPadding(dpToPx(8), dpToPx(8), 0, 0);
+                    posTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+                    posTextView.setTextColor(getResources().getColor(R.color.green_for_def));
+                    posTextView.setTypeface(null, Typeface.ITALIC);
+                    posTextView.setLayoutParams(params_pos);
+                    mDictionaryContainer.addView(posTextView);
+                }
+                //endregion
+                for (int j = 0; j < defList.get(i).getTr().size(); j++) {
+                    //region делаем вьюху для нумерации масива перевода
+                    if (defList.get(i).getTr().size() > 1) {
+                        RelativeLayout.LayoutParams params_numeric_tr = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+                        params_numeric_tr.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                        if (j == 0) {
+                            params_numeric_tr.addRule(RelativeLayout.BELOW, defLastId);
+                        } else {
+                            if (defList.get(i).getTr().get(j - 1).getMean().size() != 0) {
+                                params_numeric_tr.addRule(RelativeLayout.BELOW, meanLastId);
+                            } else
+                                params_numeric_tr.addRule(RelativeLayout.BELOW, tr_LastId);
+                        }
+                        TextView numericTrTextiew = new TextView(getActivity());
+                        numericTrTextiew.setText(String.valueOf(j + 1));
+                        numericTrTextiew.setTextColor(getActivity().getResources().getColor(R.color.secondary_text));
+                        numericTrTextiew.setPadding(0, 0, dpToPx(8), 0);
+                        numericTrTextiew.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                            numericTrTextiew.setId(Utils.generateViewId());
+                        } else {
+                            numericTrTextiew.setId(View.generateViewId());
+                        }
+                        numericTrTextiew.setLayoutParams(params_numeric_tr);
+                        mDictionaryContainer.addView(numericTrTextiew);
+                        numeric_tr_LastId = numericTrTextiew.getId();
+                    }
+                    //endregion
+                    //region делаем вьюху для масива перевода и синнимов\
+                    //добавляем синнимы
+                    String Tr_and_Syn = defList.get(i).getTr().get(j).getText();
+                    if (defList.get(i) != null) {
+                        if (defList.get(i).getTr().get(j).getSyn() != null) {
+                            for (int syn = 0; syn < defList.get(i).getTr().get(j).getSyn().size(); syn++) {
+                                Tr_and_Syn = Tr_and_Syn + ", " + defList.get(i).getTr().get(j).getSyn().get(syn).getText();
+                            }
+                        }
+                    }
+                    RelativeLayout.LayoutParams params_tr = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+                    if (defList.get(i).getTr().size() == 1) {
+                        params_tr.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+                        params_tr.addRule(RelativeLayout.BELOW, defLastId);
+                    } else {
+                        if (numeric_tr_LastId > -1) {
+                            params_tr.addRule(RelativeLayout.RIGHT_OF, numeric_tr_LastId);
+                            params_tr.addRule(RelativeLayout.ALIGN_TOP, numeric_tr_LastId);
+                        }
+                    }
+
+                    TextView tr_TextView = new TextView(getActivity());
+                    tr_TextView.setText(Tr_and_Syn);
+                    tr_TextView.setTextColor(getResources().getColor(R.color.blue_for_dictionary));
+                    tr_TextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        tr_TextView.setId(Utils.generateViewId());
+                    } else {
+                        tr_TextView.setId(View.generateViewId());
+                    }
+                    tr_TextView.setLayoutParams(params_tr);
+                    mDictionaryContainer.addView(tr_TextView);
+                    tr_LastId = tr_TextView.getId();
+                    //endregion
+                    //region делаем вьюху для массива занчений
+                    if (defList.get(i).getTr().get(j).getMean().size() != 0) {
+                        RelativeLayout.LayoutParams params_mean = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+                        params_mean.addRule(RelativeLayout.ALIGN_LEFT, tr_LastId);
+                        params_mean.addRule(RelativeLayout.BELOW, tr_LastId);
+                        TextView meanTextView = new TextView(getActivity());
+                        String meanString = "";
+                        for (int mean = 0; mean < defList.get(i).getTr().get(j).getMean().size(); mean++) {
+                            if (mean + 1 != defList.get(i).getTr().get(j).getMean().size()) {
+                                meanString += defList.get(i).getTr().get(j).getMean().get(mean).getText() + ", ";
+                            } else
+                                meanString += defList.get(i).getTr().get(j).getMean().get(mean).getText();
+                        }
+                        if (!meanString.equals("")) {
+                            meanString = "(" + meanString + ")";
+                            meanTextView.setText(meanString);
+                        }
+                        meanTextView.setTextColor(getResources().getColor(R.color.brown_for_means));
+                        meanTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+                        ;
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                            meanTextView.setId(Utils.generateViewId());
+                        } else {
+                            meanTextView.setId(View.generateViewId());
+                        }
+                        meanTextView.setLayoutParams(params_mean);
+                        mDictionaryContainer.addView(meanTextView);
+                        meanLastId = meanTextView.getId();
+                    }
+                    //endregion
+                }
+            }
+        }
+    }
 
 }
