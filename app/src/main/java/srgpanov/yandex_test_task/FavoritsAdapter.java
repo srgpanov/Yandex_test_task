@@ -12,6 +12,7 @@ import android.widget.TextView;
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
+import io.realm.Sort;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
 
 /**
@@ -25,10 +26,14 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
 
 
     //конструктор адаптера, в него передаются данные которые будут биндиться
-    public FavoritsAdapter(RealmResults<FavoritsWord> favoritsWords, Realm realm, ViewHolder.CustomClickListener listener) {
+    public FavoritsAdapter(RealmResults<FavoritsWord> favoritsWords, Realm realm, boolean sorting, ViewHolder.CustomClickListener listener) {
         this.mCustomClickListener = listener;
         mRealm = realm;
-        mFavoritsWords = favoritsWords;
+        if (sorting) {
+            mFavoritsWords = favoritsWords;
+        } else {
+            mFavoritsWords = favoritsWords.sort("Id", Sort.DESCENDING);
+        }
         mFavoritsWords.addChangeListener(this);
     }
 
@@ -95,7 +100,7 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
                 .findAll();
     }
 
-    public void remove(int position) {
+    public void remove(final int position) {
         final int id = mFavoritsWords.get(position).getId();
         mRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
@@ -108,13 +113,35 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
                     word.deleteFromRealm();
                 }
             }
+        }, new Realm.Transaction.OnSuccess() {
+            @Override
+            public void onSuccess() {
+                notifyItemRemoved(position);
+            }
         });
-        notifyItemRemoved(position);
+
+    }
+
+    public void sort(boolean increasing) {
+        if (increasing) {
+            mFavoritsWords = mFavoritsWords.sort("Id", Sort.ASCENDING);
+            notifyDataSetChanged();
+
+        } else {
+            mFavoritsWords = mFavoritsWords.sort("Id", Sort.DESCENDING);
+            notifyDataSetChanged();
+        }
+    }
+
+    @Override
+    public long getItemId(int position) {
+
+        return mFavoritsWords.get(position).getId();
     }
 
     @Override
     public void onChange(Object element) {
-      //  notifyDataSetChanged();
+
     }
 
 

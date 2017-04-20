@@ -126,5 +126,14 @@
     <string name="favorits">Избранное</string>
     <string name="recently_used">Недавно использованные</string>
     <string name="all_langauge">Все языки</string>
+    <string name="delete_history">Удалить историю</string>
+    <string name="delete_history_dialog_title">Удалить историю</string>
+    <string name="delete_favorits_dialog_title">Удалить избранное</string>
+    <string name="are_you_shure">Вы уверены?</string>
+    <string name="delete">Удалить</string>
+    <string name="cancel">Отмена</string>
+    <string name="copied">Скопировано</string>
+    <string name="oldest_first">Сначала старые</string>
+    <string name="newest_first">Сначала новые</string>
 
 </resources>

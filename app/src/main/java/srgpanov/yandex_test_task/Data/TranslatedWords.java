@@ -17,6 +17,7 @@ public class TranslatedWords extends RealmObject {
     private String DirectionTranslation;
     private boolean Favorits;
     private FavoritsWord mFavoritsWord;
+    private RealmList<Defenition> mDefenitions;
 
     public RealmList<Defenition> getDefenitions() {
         return mDefenitions;
@@ -25,8 +26,6 @@ public class TranslatedWords extends RealmObject {
     public void setDefenitions(RealmList<Defenition> defenitions) {
         mDefenitions = defenitions;
     }
-
-    private RealmList<Defenition> mDefenitions;
 
     public FavoritsWord getFavoritsWord() {
         return mFavoritsWord;

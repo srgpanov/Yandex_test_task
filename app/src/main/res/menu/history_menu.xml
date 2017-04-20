@@ -9,5 +9,23 @@
         app:showAsAction="always|collapseActionView"
         android:title="@string/menu_search"
         />
+    <item
+        android:id="@+id/menu_delete_history"
+        android:icon="@drawable/ic_delete_black_24dp"
+        app:showAsAction="never"
+        android:title="@string/delete_history"
+        />
+    <item
+        android:id="@+id/menu_sort_ascending_history"
+        android:icon="@drawable/ic_sort_ascending"
+        app:showAsAction="never"
+        android:title="@string/oldest_first"
+        />
+    <item
+        android:id="@+id/menu_sort_descending_history"
+        android:icon="@drawable/ic_sort_descending"
+        app:showAsAction="never"
+        android:title="@string/newest_first"
+        />
 
 </menu>

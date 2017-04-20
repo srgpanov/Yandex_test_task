@@ -41,10 +41,15 @@ public interface ConstantManager {
     int CODE_GET_LANG_INPUT = 100;
     int CODE_GET_LANG_OUTPUT = 101;
     int REQUEST_PERMISSION_CODE_RECORD_AUDIO = 102;
-
-
     int PERMISSION_REQUEST_SETTINGS_CODE = 103;
+    int CODE_DELETE_HISTORY =104;
+    int CODE_DELETE_FAVORITS = 105;
+
 
     String CURRENT_FRAGMENT ="current_fragment" ;
     String LAST_WORD_ID = "last_word";
+    String TAG_DELETE_HISTORY ="deleteHistory" ;
+    String TAG_DELETE_FAVORITS ="deleteFavorits" ;
+    String SORTING_HISTORY="sortingHistory";
+    String SORTING_FAVORITS="sortingFavorits";
 }

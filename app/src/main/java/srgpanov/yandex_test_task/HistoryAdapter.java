@@ -1,7 +1,7 @@
 package srgpanov.yandex_test_task;
 
-import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +14,7 @@ import io.realm.Realm;
 import io.realm.RealmChangeListener;
 import io.realm.RealmModel;
 import io.realm.RealmResults;
+import io.realm.Sort;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
 
 /**
@@ -24,16 +25,18 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
     private RealmResults<TranslatedWords> mTranslatedWords;
     private Realm mRealm;
     private ViewHolder.CustomClickListener mCustomClickListener;
-    Context mContext;
 
 
     //конструктор адаптера, в него передаются данные которые будут биндиться
-    public HistoryAdapter(RealmResults<TranslatedWords> translatedWords, Realm realm, ViewHolder.CustomClickListener listener) {
+    public HistoryAdapter(RealmResults<TranslatedWords> translatedWords, Realm realm, boolean sorting, ViewHolder.CustomClickListener listener) {
         this.mCustomClickListener = listener;
-        mRealm=realm;
-        mTranslatedWords = translatedWords;
+        mRealm = realm;
+        if (sorting) {
+            mTranslatedWords = translatedWords;
+        } else {
+            mTranslatedWords = translatedWords.sort("Id", Sort.DESCENDING);
+        }
         mTranslatedWords.addChangeListener(this);
-
     }
 
     @Override
@@ -58,12 +61,28 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
 
     }
 
+    public void sort(boolean increasing) {
+        if (increasing) {
+            mTranslatedWords = mTranslatedWords.sort("Id", Sort.ASCENDING);
+            notifyDataSetChanged();
+
+        } else {
+            mTranslatedWords = mTranslatedWords.sort("Id", Sort.DESCENDING);
+            notifyDataSetChanged();
+        }
+    }
+
 
     @Override
     public int getItemCount() {
         return mTranslatedWords.size();
     }
 
+    @Override
+    public long getItemId(int position) {
+
+        return mTranslatedWords.get(position).getId();
+    }
 
     @Override
     public Filter getFilter() {
@@ -75,7 +94,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
 
             @Override
             protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
-                if (charSequence != null || charSequence.toString().equals("")) {
+                if (TextUtils.isEmpty(charSequence)) {
                     mTranslatedWords = filterWords(charSequence.toString().toLowerCase());
                     notifyDataSetChanged();
                 }
@@ -99,8 +118,8 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
         mRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                if(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst()!=null)
-                realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().deleteFromRealm();
+                if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst() != null)
+                    realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().deleteFromRealm();
             }
         });
         words.addChangeListener(new RealmChangeListener<RealmModel>() {
@@ -113,40 +132,40 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
 
     }
 
-
     @Override
     public void onChange(Object element) {
     }
 
-    //создаём ViewHolder, в нём находим все View нашео итема
-    public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        private ImageView mItemImageView;
-        private TextView mPrimaryTextView;
-        private TextView mSecondaryTextView;
-        private TextView mDirectionTextView;
-        private CustomClickListener mListener;
 
-        public ViewHolder(View itemView, CustomClickListener customClickListener) {
-            super(itemView);
-            this.mListener = customClickListener;
-            mItemImageView = (ImageView) itemView.findViewById(R.id.item_image_view);
-            mPrimaryTextView = (TextView) itemView.findViewById(R.id.item_primary_text);
-            mSecondaryTextView = (TextView) itemView.findViewById(R.id.item_seconadary_text);
-            mDirectionTextView = (TextView) itemView.findViewById(R.id.item_direction_translation_text);
-            mItemImageView.setOnClickListener(this);
-            mPrimaryTextView.setOnClickListener(this);
-            mSecondaryTextView.setOnClickListener(this);
-        }
+//создаём ViewHolder, в нём находим все View нашео итема
+public static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    private ImageView mItemImageView;
+    private TextView mPrimaryTextView;
+    private TextView mSecondaryTextView;
+    private TextView mDirectionTextView;
+    private CustomClickListener mListener;
 
-        public interface CustomClickListener {
-            void onItemClickListener(View view, int position);
-        }
+    public ViewHolder(View itemView, CustomClickListener customClickListener) {
+        super(itemView);
+        this.mListener = customClickListener;
+        mItemImageView = (ImageView) itemView.findViewById(R.id.item_image_view);
+        mPrimaryTextView = (TextView) itemView.findViewById(R.id.item_primary_text);
+        mSecondaryTextView = (TextView) itemView.findViewById(R.id.item_seconadary_text);
+        mDirectionTextView = (TextView) itemView.findViewById(R.id.item_direction_translation_text);
+        mItemImageView.setOnClickListener(this);
+        mPrimaryTextView.setOnClickListener(this);
+        mSecondaryTextView.setOnClickListener(this);
+    }
 
-        @Override
-        public void onClick(View view) {
-            if (mListener != null) {
-                mListener.onItemClickListener(view, getAdapterPosition());
-            }
+    public interface CustomClickListener {
+        void onItemClickListener(View view, int position);
+    }
+
+    @Override
+    public void onClick(View view) {
+        if (mListener != null) {
+            mListener.onItemClickListener(view, getAdapterPosition());
         }
     }
+}
 }

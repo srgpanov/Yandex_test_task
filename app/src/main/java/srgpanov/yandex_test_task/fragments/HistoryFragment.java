@@ -1,5 +1,9 @@
 package srgpanov.yandex_test_task.fragments;
 
+import android.app.Activity;
+import android.app.FragmentManager;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -11,6 +15,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -29,8 +34,10 @@ import io.realm.Realm;
 import io.realm.RealmResults;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
+import srgpanov.yandex_test_task.DeleteHistoryDialog;
 import srgpanov.yandex_test_task.HistoryAdapter;
 import srgpanov.yandex_test_task.R;
+import srgpanov.yandex_test_task.Utils.ConstantManager;
 
 /**
  * Created by Пан on 30.03.2017.
@@ -43,25 +50,27 @@ public class HistoryFragment extends android.app.Fragment {
     private HistoryAdapter mHistoryAdapter;
     private Realm mRealm;
     private ActionBar mActionBar;
-//// TODO: 13.04.2017 добавить сортировку через меню
+    private SharedPreferences mPreferences;
+
+    //// TODO: 13.04.2017 добавить сортировку через меню
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-            }
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+    }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         mRealm = Realm.getDefaultInstance();
         View rootView = inflater.inflate(R.layout.fragment_history, container, false);
-        mHistoryToolbar = (Toolbar)rootView.findViewById(R.id.toolbar_history);
-        AppCompatActivity activity = (AppCompatActivity)getActivity();
+        mHistoryToolbar = (Toolbar) rootView.findViewById(R.id.toolbar_history);
+        AppCompatActivity activity = (AppCompatActivity) getActivity();
         activity.setSupportActionBar(mHistoryToolbar);
         mActionBar = activity.getSupportActionBar();
         setHasOptionsMenu(true);
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view_history);
         setupRecycleView();
-
 
         return rootView;
     }
@@ -69,39 +78,107 @@ public class HistoryFragment extends android.app.Fragment {
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.history_menu,menu);
+        inflater.inflate(R.menu.history_menu, menu);
         MenuItem searchItem = menu.findItem(R.id.menu_search_history);
+        MenuItem deleteItem = menu.findItem(R.id.menu_delete_history);
+        MenuItem sortDescendingItem = menu.findItem(R.id.menu_sort_descending_history);
+        MenuItem sortAscendingItem = menu.findItem(R.id.menu_sort_ascending_history);
+        deleteItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+                                                  @Override
+                                                  public boolean onMenuItemClick(MenuItem menuItem) {
+                                                      FragmentManager manager = getFragmentManager();
+                                                      DeleteHistoryDialog deleteHistoryDialog = new DeleteHistoryDialog();
+                                                      deleteHistoryDialog.setTargetFragment(HistoryFragment.this, ConstantManager.CODE_DELETE_HISTORY);
+                                                      deleteHistoryDialog.show(manager, "deleteDialog");
+                                                      return true;
+                                                  }
+                                              }
+        );
 
-        SearchView searchView= (SearchView) MenuItemCompat.getActionView(searchItem);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
         searchView.setQueryHint(getString(R.string.query_hint));
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
 
-            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                @Override
-                public boolean onQueryTextSubmit(String query) {
-                    return false;
-                }
-
-                @Override
-                public boolean onQueryTextChange(String newText) {
-                    mHistoryAdapter.getFilter().filter(newText);
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                mHistoryAdapter.getFilter().filter(newText);
+                return true;
+            }
+        });
+        sortAscendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                if (!mPreferences.getBoolean(ConstantManager.SORTING_HISTORY, true)) {
+                    SharedPreferences.Editor editor = mPreferences.edit();
+                    editor.putBoolean(ConstantManager.SORTING_HISTORY, true);
+                    editor.apply();
+                    mHistoryAdapter.sort(true);
+                    Toast.makeText(getActivity(), "sortAscendingItem", Toast.LENGTH_SHORT).show();
                     return true;
-                }
-            });
-        }
+                } else return true;
+            }
+        });
+        sortDescendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                if (mPreferences.getBoolean(ConstantManager.SORTING_HISTORY, true)) {
+                    SharedPreferences.Editor editor = mPreferences.edit();
+                    editor.putBoolean(ConstantManager.SORTING_HISTORY, false);
+                    editor.apply();
+                    mHistoryAdapter.sort(false);
+                    Toast.makeText(getActivity(), "sortDescendingItem", Toast.LENGTH_SHORT).show();
+                    return true;
+                } else return true;
+            }
+        });
+    }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == ConstantManager.CODE_DELETE_HISTORY) {
+                final Realm newRealm = Realm.getDefaultInstance();
+                newRealm.executeTransactionAsync(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        realm.where(TranslatedWords.class).findAll().deleteAllFromRealm();
+                    }
+                }, new Realm.Transaction.OnSuccess() {
+                    @Override
+                    public void onSuccess() {
+                        newRealm.close();
+                        mHistoryAdapter.notifyDataSetChanged();
+                        Toast.makeText(getActivity(), "delete", Toast.LENGTH_SHORT).show();
+                    }
+                }, new Realm.Transaction.OnError() {
+                    @Override
+                    public void onError(Throwable error) {
+                        newRealm.close();
+                        Toast.makeText(getActivity(), "no", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+            }
+
+        }
+    }
 
     private void setupRecycleView() {
         mTranslatedWords = mRealm.where(TranslatedWords.class).findAllAsync();
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(linearLayoutManager);
         mRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-        mHistoryAdapter = new HistoryAdapter(mTranslatedWords,mRealm, new HistoryAdapter.ViewHolder.CustomClickListener() {
+        mHistoryAdapter = new HistoryAdapter(mTranslatedWords, mRealm, mPreferences.getBoolean(ConstantManager.SORTING_HISTORY, true), new HistoryAdapter.ViewHolder.CustomClickListener() {
             @Override
             public void onItemClickListener(View view, int position) {
                 switch (view.getId()) {
                     case R.id.item_image_view:
                         setFavoritWord(position);
-                        mHistoryAdapter.notifyItemChanged(position);
                         break;
                     case R.id.item_primary_text:
                         Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();
@@ -124,37 +201,61 @@ public class HistoryFragment extends android.app.Fragment {
     }
 
 
-
-
     private void setFavoritWord(final int position) {
-        mRealm.executeTransaction(new Realm.Transaction() {
+        final int id = (int)mHistoryAdapter.getItemId(position);
+        final Realm newRealm = Realm.getDefaultInstance();
+        newRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                mTranslatedWords.get(position).setFavorits(!mTranslatedWords.get(position).isFavorits());
+                boolean fav = realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().isFavorits();
+                realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().setFavorits(!fav);
+            }
+        }, new Realm.Transaction.OnSuccess() {
+            @Override
+            public void onSuccess() {
+                newRealm.close();
+                mHistoryAdapter.notifyItemChanged(position);
+            }
+        }, new Realm.Transaction.OnError() {
+            @Override
+            public void onError(Throwable error) {
+                newRealm.close();
             }
         });
-        mRealm.executeTransaction(new Realm.Transaction() {
+        final Realm newRealm1 = Realm.getDefaultInstance();
+        newRealm1.executeTransactionAsync(new Realm.Transaction() {
             @Override
             public void execute(Realm realm) {
-                if(mTranslatedWords.get(position).isFavorits()){
-                    Number currentIdNum = mRealm.where(FavoritsWord.class).max("Id");
+                if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().isFavorits()) {
+                    Number currentIdNum = realm.where(FavoritsWord.class).max("Id");
                     int nextId;
                     if (currentIdNum == null) {
                         nextId = 1;
                     } else {
                         nextId = currentIdNum.intValue() + 1;
                     }
-                    FavoritsWord word = mRealm.createObject(FavoritsWord.class, nextId);
-                    word.setInputText(mTranslatedWords.get(position).getInputText());
-                    word.setTranslatedText(mTranslatedWords.get(position).getTranslatedText());
-                    word.setDirectionTranslation(mTranslatedWords.get(position).getDirectionTranslation());
+                    FavoritsWord word = realm.createObject(FavoritsWord.class, nextId);
+                    word.setInputText(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getInputText());
+                    word.setTranslatedText(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getTranslatedText());
+                    word.setDirectionTranslation(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getDirectionTranslation());
                     word.setFavorits(true);
-                    word.setHistoryWords(mTranslatedWords.get(position));
-                    mTranslatedWords.get(position).setFavoritsWord(word);
-                }else {
-                    if (mTranslatedWords.get(position).getFavoritsWord()!=null)
-                    mTranslatedWords.get(position).getFavoritsWord().deleteFromRealm();
+                    word.setHistoryWords(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst());
+                    word.setDefenitions(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getDefenitions());
+                    realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().setFavoritsWord(word);
+                } else {
+                    if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getFavoritsWord() != null)
+                        realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getFavoritsWord().deleteFromRealm();
                 }
+            }
+        }, new Realm.Transaction.OnSuccess() {
+            @Override
+            public void onSuccess() {
+                newRealm1.close();
+            }
+        }, new Realm.Transaction.OnError() {
+            @Override
+            public void onError(Throwable error) {
+                newRealm1.close();
             }
         });
     }

@@ -1,5 +1,9 @@
 package srgpanov.yandex_test_task.fragments;
 
+import android.app.Activity;
+import android.app.FragmentManager;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -11,6 +15,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -28,8 +33,10 @@ import android.widget.Toast;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
+import srgpanov.yandex_test_task.DeleteFavotitsDialog;
 import srgpanov.yandex_test_task.FavoritsAdapter;
 import srgpanov.yandex_test_task.R;
+import srgpanov.yandex_test_task.Utils.ConstantManager;
 
 /**
  * Created by Пан on 28.03.2017.
@@ -37,12 +44,17 @@ import srgpanov.yandex_test_task.R;
 
 public class FavoritsFragment extends android.app.Fragment {
     private RecyclerView mRecyclerViewFavorits;
-    private SearchView mSearchView;
     private Toolbar mFavoritsToolbar;
     private RealmResults<FavoritsWord> mFavoritsWords;
     private FavoritsAdapter mFavoritsAdapter;
     private Realm mRealm;
+    private SharedPreferences mPreferences;
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mPreferences= PreferenceManager.getDefaultSharedPreferences(getActivity());
+    }
 
     @Nullable
     @Override
@@ -66,7 +78,7 @@ public class FavoritsFragment extends android.app.Fragment {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerViewFavorits.setLayoutManager(linearLayoutManager);
         mRecyclerViewFavorits.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-        mFavoritsAdapter = new FavoritsAdapter(mFavoritsWords, mRealm, new FavoritsAdapter.ViewHolder.CustomClickListener() {
+        mFavoritsAdapter = new FavoritsAdapter(mFavoritsWords, mRealm,mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true), new FavoritsAdapter.ViewHolder.CustomClickListener() {
             @Override
             public void onItemClickListener(View view, int position) {
                 switch (view.getId()) {
@@ -98,6 +110,19 @@ public class FavoritsFragment extends android.app.Fragment {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.favorits_menu, menu);
         MenuItem searchItem = menu.findItem(R.id.menu_search_favorits);
+        MenuItem deleteItem = menu.findItem(R.id.menu_delete_favorits);
+        MenuItem sortDescendingItem = menu.findItem(R.id.menu_sort_descending_favorits);
+        MenuItem sortAscendingItem = menu.findItem(R.id.menu_sort_ascending_favorits);
+        deleteItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                FragmentManager manager = getFragmentManager();
+                DeleteFavotitsDialog deleteFavotitsDialog = new DeleteFavotitsDialog();
+                deleteFavotitsDialog.setTargetFragment(FavoritsFragment.this, ConstantManager.CODE_DELETE_FAVORITS);
+                deleteFavotitsDialog.show(manager, "deleteDialog");
+                return true;
+            }
+        });
 
         SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
         searchView.setQueryHint(getString(R.string.query_hint));
@@ -114,8 +139,68 @@ public class FavoritsFragment extends android.app.Fragment {
                 return true;
             }
         });
+        sortAscendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                if (!mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true)) {
+                    SharedPreferences.Editor editor = mPreferences.edit();
+                    editor.putBoolean(ConstantManager.SORTING_FAVORITS, true);
+                    editor.apply();
+                    mFavoritsAdapter.sort(true);
+                    Toast.makeText(getActivity(), "sortAscendingItem", Toast.LENGTH_SHORT).show();
+                    return true;
+                } else return true;
+            }
+        });
+        sortDescendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                if (mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true)) {
+                    SharedPreferences.Editor editor = mPreferences.edit();
+                    editor.putBoolean(ConstantManager.SORTING_FAVORITS, false);
+                    editor.apply();
+                    mFavoritsAdapter.sort(false);
+                    Toast.makeText(getActivity(), "sortDescendingItem", Toast.LENGTH_SHORT).show();
+                    return true;
+                } else return true;
+            }
+        });
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == ConstantManager.CODE_DELETE_FAVORITS) {
+                final Realm newRealm = Realm.getDefaultInstance();
+                newRealm.executeTransactionAsync(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        RealmResults<FavoritsWord> realmResults = realm.where(FavoritsWord.class).findAll();
+                        for (FavoritsWord word : realmResults) {
+                            if (word.getHistoryWords() != null) {
+                                word.getHistoryWords().setFavorits(false);
+                            }
+                        }
+                        realmResults.deleteAllFromRealm();
+                    }
+                }, new Realm.Transaction.OnSuccess() {
+                    @Override
+                    public void onSuccess() {
+                        newRealm.close();
+                        mFavoritsAdapter.notifyDataSetChanged();
+                        Toast.makeText(getActivity(), "delete", Toast.LENGTH_SHORT).show();
+                    }
+                }, new Realm.Transaction.OnError() {
+                    @Override
+                    public void onError(Throwable error) {
+                        newRealm.close();
+                        Toast.makeText(getActivity(), "no", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
+    }
 
     private void setUpItemTouchHelper() {
         ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
