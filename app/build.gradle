@@ -3,7 +3,7 @@ apply plugin: 'realm-android'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.0"
+    buildToolsVersion "25.0.2"
     defaultConfig {
         applicationId "srgpanov.yandex_test_task"
         minSdkVersion 15
@@ -30,6 +30,7 @@ dependencies {
         exclude module: 'okhttp'
     }
 
+    compile 'com.android.support:support-v13:25.3.1'
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support:design:25.3.1'
     compile 'com.android.support:support-vector-drawable:25.3.1'

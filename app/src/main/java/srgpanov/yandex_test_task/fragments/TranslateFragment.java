@@ -26,7 +26,6 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -55,7 +54,6 @@ import srgpanov.yandex_test_task.Data.Dictionary.Transcript;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
 import srgpanov.yandex_test_task.InputLangActivity;
-import srgpanov.yandex_test_task.MainActivity;
 import srgpanov.yandex_test_task.R;
 import srgpanov.yandex_test_task.Utils.AvailableLanguages;
 import srgpanov.yandex_test_task.Utils.ConstantManager;
@@ -109,6 +107,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     private int MtimerDelay;
     private Vocalizer mVocalizer;
     private Recognizer mRecognizer;
+    private int lastDictId = -1;
     private boolean isFavoritWord = false;
     private boolean isSpeakerInput = false;
     private boolean isSpeakerOutput = false;
@@ -136,6 +135,32 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     }
 
     @Override
+    public void onViewStateRestored(Bundle savedInstanceState) {
+        super.onViewStateRestored(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            mTranslateOutputTextView.setText(savedInstanceState.getString(ConstantManager.OUTPUT_TEXT_VIEW));
+            lastDictId = savedInstanceState.getInt(ConstantManager.LAST_DICT_ID, -1);
+            if (lastDictId != -1) {
+                final TranslatedWords lastDictWords = mRealm.where(TranslatedWords.class).equalTo("Id", lastDictId).findFirst();
+                if (lastDictWords != null) addDictionary(lastDictWords);
+                else
+                    lookInDictionary(savedInstanceState.getString(ConstantManager.OUTPUT_TEXT_VIEW), savedInstanceState.getString(ConstantManager.LAST_LANG));
+            }
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (mTranslateOutputTextView != null) {
+            outState.putString(ConstantManager.OUTPUT_TEXT_VIEW, mTranslateOutputTextView.getText().toString());
+        }
+        outState.putInt(ConstantManager.LAST_DICT_ID, lastDictId);
+        outState.putString(ConstantManager.LAST_LANG, getDirection(getActivity()));
+    }
+
+    @Override
     public void onStart() {
         super.onStart();
         //добавляем TextWatcher для задержки обработки вводимых данных пользователем
@@ -150,8 +175,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
                 if (mTimer != null) {
                     mTimer.cancel();
                 }
-                resetVocalizer();
-                resetDictionary();
+
             }
 
             @Override
@@ -169,6 +193,14 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
                     }
                 };
                 mTimer.start();
+
+                if (!TextUtils.isEmpty(editable)) {
+                    mInputSpeaker.setVisibility(View.VISIBLE);
+                    mClear.setVisibility(View.VISIBLE);
+                } else {
+                    mInputSpeaker.setVisibility(View.GONE);
+                    mClear.setVisibility(View.GONE);
+                }
 
                 if (isFavoritWord) {
                     mFavorite.setImageResource(R.drawable.ic_bookmark_grey_24dp);
@@ -189,22 +221,25 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
 
             @Override
             public void afterTextChanged(Editable editable) {
-                resetDictionary();
+                changeButtonsShown(editable);
                 addToDb(mTranslateInputEditText.getText().toString().trim(), mTranslateOutputTextView.getText().toString().trim(), getDirection(getActivity()), false);
                 lookInDictionary(mTranslateInputEditText.getText().toString().trim(), getDirection(getActivity()));
-
             }
-
         });
-        if (((MainActivity) getActivity()).getWordLastId() != 0) {
-            TranslatedWords words = mRealm.where(TranslatedWords.class).equalTo("Id", ((MainActivity) getActivity()).getWordLastId()).findFirst();
-            if (words != null) {
-                mTranslateInputEditText.setText(words.getInputText());
-                mTranslateOutputTextView.setText(words.getTranslatedText());
-                addDictionary(words);
-            }
-        }
+    }
 
+    private void changeButtonsShown(Editable editable) {
+        if (!TextUtils.isEmpty(editable)) {
+            mOututSpeaker.setVisibility(View.VISIBLE);
+            mFavorite.setVisibility(View.VISIBLE);
+            mShare.setVisibility(View.VISIBLE);
+            mCopy.setVisibility(View.VISIBLE);
+        } else {
+            mOututSpeaker.setVisibility(View.GONE);
+            mFavorite.setVisibility(View.GONE);
+            mShare.setVisibility(View.GONE);
+            mCopy.setVisibility(View.GONE);
+        }
     }
 
 
@@ -327,12 +362,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     private void setupTextViews(View rootView) {
         mTranslateOutputTextView = (TextView) rootView.findViewById(R.id.output_txt_view);
         mTranslateInputEditText = (YandexEditText) rootView.findViewById(R.id.input_edit_text);
-        if (TextUtils.isEmpty(mTranslateInputEditText.getText().toString())) {
-            mTranslateInputEditText.requestFocus();
-            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
-        }
-
+        mTranslateInputEditText.requestFocus();
     }
 
 
@@ -405,14 +435,14 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
             @Override
             public void onClick(View view) {
 
-                Toast.makeText(getActivity(), "share", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), " s", Toast.LENGTH_SHORT).show();
             }
         });
         mCopy.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ClipboardManager clipboardManager = (ClipboardManager)getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clipData = ClipData.newPlainText("translate",mTranslateOutputTextView.getText().toString());
+                ClipboardManager clipboardManager = (ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clipData = ClipData.newPlainText("translate", mTranslateOutputTextView.getText().toString());
                 clipboardManager.setPrimaryClip(clipData);
                 Toast.makeText(getActivity(), R.string.copied, Toast.LENGTH_SHORT).show();
             }
@@ -627,7 +657,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
 
 
     private void addToDb(final String inputText, final String translatedText, final String directionTranslate, final boolean isFavorits) {
-        if (!TextUtils.isEmpty(inputText)) {
+        if (!TextUtils.isEmpty(inputText) && !TextUtils.isEmpty(translatedText)) {
             final Realm newRealm = Realm.getDefaultInstance();
             newRealm.executeTransactionAsync(new Realm.Transaction() {
                 @Override
@@ -681,7 +711,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
                 @Override
                 public void onSuccess() {
                     Toast.makeText(getActivity(), "sucses", Toast.LENGTH_SHORT).show();
-                    ((MainActivity) getActivity()).setWordLastId(newRealm.where(TranslatedWords.class).max("Id").intValue());
+
                     newRealm.close();
 
                     if (isFavorits) {
@@ -765,6 +795,7 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
     private void showToast(String text) {
         Toast.makeText(getActivity(), text, Toast.LENGTH_SHORT).show();
     }
+
 
     //region vokalizer.listener
     @Override
@@ -856,7 +887,10 @@ public class TranslateFragment extends android.app.Fragment implements Vocalizer
 
     //endregion
     private void addDictionary(TranslatedWords words) {
+        resetDictionary();
         if (words.getDefenitions() != null) {
+            lastDictId = words.getId();
+
             RealmList<Defenition> defList = words.getDefenitions();
             int tr_LastId = -1;//tr - массив переводов
             int defLastId = -1;//def - массив словарных статей

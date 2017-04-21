@@ -38,6 +38,7 @@ public class YandexAplication extends Application {
 
     }
 
+
     private void initLangauges() {
         Realm realm = Realm.getDefaultInstance();
         Langauge langauge0 = new Langauge(0, getApplicationContext().getString(R.string.af), "af", false);

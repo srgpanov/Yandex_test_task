@@ -47,9 +47,10 @@ public interface ConstantManager {
 
 
     String CURRENT_FRAGMENT ="current_fragment" ;
-    String LAST_WORD_ID = "last_word";
+    String LAST_DICT_ID = "last_word";
     String TAG_DELETE_HISTORY ="deleteHistory" ;
     String TAG_DELETE_FAVORITS ="deleteFavorits" ;
     String SORTING_HISTORY="sortingHistory";
     String SORTING_FAVORITS="sortingFavorits";
+    String LAST_LANG = "lastLang";
 }

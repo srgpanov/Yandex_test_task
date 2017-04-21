@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import io.realm.Realm;
@@ -94,7 +95,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
 
             @Override
             protected void publishResults(CharSequence charSequence, FilterResults filterResults) {
-                if (TextUtils.isEmpty(charSequence)) {
+                if (!TextUtils.isEmpty(charSequence)) {
                     mTranslatedWords = filterWords(charSequence.toString().toLowerCase());
                     notifyDataSetChanged();
                 }
@@ -143,6 +144,7 @@ public static class ViewHolder extends RecyclerView.ViewHolder implements View.O
     private TextView mPrimaryTextView;
     private TextView mSecondaryTextView;
     private TextView mDirectionTextView;
+    private RelativeLayout mLayout;
     private CustomClickListener mListener;
 
     public ViewHolder(View itemView, CustomClickListener customClickListener) {
@@ -152,6 +154,8 @@ public static class ViewHolder extends RecyclerView.ViewHolder implements View.O
         mPrimaryTextView = (TextView) itemView.findViewById(R.id.item_primary_text);
         mSecondaryTextView = (TextView) itemView.findViewById(R.id.item_seconadary_text);
         mDirectionTextView = (TextView) itemView.findViewById(R.id.item_direction_translation_text);
+        mLayout=(RelativeLayout)itemView.findViewById(R.id.item_container);
+        mLayout.setOnClickListener(this);
         mItemImageView.setOnClickListener(this);
         mPrimaryTextView.setOnClickListener(this);
         mSecondaryTextView.setOnClickListener(this);

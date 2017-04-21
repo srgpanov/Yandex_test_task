@@ -13,8 +13,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,8 +21,6 @@ import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,7 +38,7 @@ import srgpanov.yandex_test_task.Utils.ConstantManager;
  * Created by Пан on 28.03.2017.
  */
 
-public class FavoritsFragment extends android.app.Fragment {
+public class FavoritsFragment extends android.app.Fragment  {
     private RecyclerView mRecyclerViewFavorits;
     private Toolbar mFavoritsToolbar;
     private RealmResults<FavoritsWord> mFavoritsWords;
@@ -56,63 +52,26 @@ public class FavoritsFragment extends android.app.Fragment {
         mPreferences= PreferenceManager.getDefaultSharedPreferences(getActivity());
     }
 
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         mRealm = Realm.getDefaultInstance();
         View rootView = inflater.inflate(R.layout.fragment_bookmarks, container, false);
         mFavoritsToolbar = (Toolbar) rootView.findViewById(R.id.toolbar_favorits);
-        AppCompatActivity activity = (AppCompatActivity) getActivity();
-        activity.setSupportActionBar(mFavoritsToolbar);
-        ActionBar actionBar = activity.getSupportActionBar();
-        setHasOptionsMenu(true);
+        setupToolbar();
         mRecyclerViewFavorits = (RecyclerView) rootView.findViewById(R.id.recycler_view_favorits);
         setupRecycleView();
 
         return rootView;
     }
 
-
-    private void setupRecycleView() {
-        mFavoritsWords = mRealm.where(FavoritsWord.class).findAllAsync();
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
-        mRecyclerViewFavorits.setLayoutManager(linearLayoutManager);
-        mRecyclerViewFavorits.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-        mFavoritsAdapter = new FavoritsAdapter(mFavoritsWords, mRealm,mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true), new FavoritsAdapter.ViewHolder.CustomClickListener() {
-            @Override
-            public void onItemClickListener(View view, int position) {
-                switch (view.getId()) {
-                    case R.id.item_image_view:
-                        mFavoritsAdapter.remove(position);
-                        break;
-                    case R.id.item_primary_text:
-                        Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();
-                        break;
-                    case R.id.item_seconadary_text:
-                        Toast.makeText(getActivity(), "secondary", Toast.LENGTH_SHORT).show();
-                        break;
-                }
-            }
-        });
-        mRecyclerViewFavorits.setAdapter(mFavoritsAdapter);
-        setUpItemTouchHelper();
-        setUpAnimationDecoratorHelper();
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mRealm.close();
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.favorits_menu, menu);
-        MenuItem searchItem = menu.findItem(R.id.menu_search_favorits);
-        MenuItem deleteItem = menu.findItem(R.id.menu_delete_favorits);
-        MenuItem sortDescendingItem = menu.findItem(R.id.menu_sort_descending_favorits);
-        MenuItem sortAscendingItem = menu.findItem(R.id.menu_sort_ascending_favorits);
+    private void setupToolbar() {
+        mFavoritsToolbar.inflateMenu(R.menu.favorits_menu);
+        MenuItem searchItem = mFavoritsToolbar.getMenu().findItem(R.id.menu_search_favorits);
+        MenuItem deleteItem = mFavoritsToolbar.getMenu().findItem(R.id.menu_delete_favorits);
+        MenuItem sortDescendingItem = mFavoritsToolbar.getMenu().findItem(R.id.menu_sort_descending_favorits);
+        MenuItem sortAscendingItem = mFavoritsToolbar.getMenu().findItem(R.id.menu_sort_ascending_favorits);
         deleteItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
@@ -165,6 +124,110 @@ public class FavoritsFragment extends android.app.Fragment {
                 } else return true;
             }
         });
+    }
+
+
+//    @Override
+//    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+//        menu.clear();
+//        inflater.inflate(R.menu.favorits_menu, menu);
+//        super.onCreateOptionsMenu(menu, inflater);
+//        MenuItem searchItem = menu.findItem(R.id.menu_search_favorits);
+//        MenuItem deleteItem = menu.findItem(R.id.menu_delete_favorits);
+//        MenuItem sortDescendingItem = menu.findItem(R.id.menu_sort_descending_favorits);
+//        MenuItem sortAscendingItem = menu.findItem(R.id.menu_sort_ascending_favorits);
+//        deleteItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//            @Override
+//            public boolean onMenuItemClick(MenuItem menuItem) {
+//                FragmentManager manager = getFragmentManager();
+//                DeleteFavotitsDialog deleteFavotitsDialog = new DeleteFavotitsDialog();
+//                deleteFavotitsDialog.setTargetFragment(FavoritsFragment.this, ConstantManager.CODE_DELETE_FAVORITS);
+//                deleteFavotitsDialog.show(manager, "deleteDialog");
+//                return true;
+//            }
+//        });
+//
+//        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+//        searchView.setQueryHint(getString(R.string.query_hint));
+//
+//        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+//            @Override
+//            public boolean onQueryTextSubmit(String query) {
+//                return false;
+//            }
+//
+//            @Override
+//            public boolean onQueryTextChange(String newText) {
+//                mFavoritsAdapter.getFilter().filter(newText);
+//                return true;
+//            }
+//        });
+//        sortAscendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//            @Override
+//            public boolean onMenuItemClick(MenuItem menuItem) {
+//                if (!mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true)) {
+//                    SharedPreferences.Editor editor = mPreferences.edit();
+//                    editor.putBoolean(ConstantManager.SORTING_FAVORITS, true);
+//                    editor.apply();
+//                    mFavoritsAdapter.sort(true);
+//                    Toast.makeText(getActivity(), "sortAscendingItem", Toast.LENGTH_SHORT).show();
+//                    return true;
+//                } else return true;
+//            }
+//        });
+//        sortDescendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+//            @Override
+//            public boolean onMenuItemClick(MenuItem menuItem) {
+//                if (mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true)) {
+//                    SharedPreferences.Editor editor = mPreferences.edit();
+//                    editor.putBoolean(ConstantManager.SORTING_FAVORITS, false);
+//                    editor.apply();
+//                    mFavoritsAdapter.sort(false);
+//                    Toast.makeText(getActivity(), "sortDescendingItem", Toast.LENGTH_SHORT).show();
+//                    return true;
+//                } else return true;
+//            }
+//        });
+//    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mRealm.close();
+    }
+
+    private void setupRecycleView() {
+        mFavoritsWords = mRealm.where(FavoritsWord.class).findAllAsync();
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
+        mRecyclerViewFavorits.setLayoutManager(linearLayoutManager);
+        mRecyclerViewFavorits.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
+        mFavoritsAdapter = new FavoritsAdapter(mFavoritsWords, mRealm,mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true), new FavoritsAdapter.ViewHolder.CustomClickListener() {
+            @Override
+            public void onItemClickListener(View view, int position) {
+                switch (view.getId()) {
+                    case R.id.item_image_view:
+                        mFavoritsAdapter.remove(position);
+                        break;
+                    case R.id.item_primary_text:
+                        Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();
+                        break;
+                    case R.id.item_seconadary_text:
+                        Toast.makeText(getActivity(), "secondary", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        });
+        mRecyclerViewFavorits.setAdapter(mFavoritsAdapter);
+        setUpItemTouchHelper();
+        setUpAnimationDecoratorHelper();
+    }
+
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if (isVisibleToUser) {
+            mFavoritsAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -360,4 +423,6 @@ public class FavoritsFragment extends android.app.Fragment {
 
         });
     }
+
+
 }

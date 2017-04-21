@@ -8,16 +8,25 @@
     android:theme="@style/AppTheme"
     tools:context="srgpanov.yandex_test_task.MainActivity">
 
-    <LinearLayout
-        android:id="@+id/fragments_container"
+    <srgpanov.yandex_test_task.DeactivatedViewPager
+        android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/navigation"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:orientation="vertical">
-    </LinearLayout>
+        >
+
+    </srgpanov.yandex_test_task.DeactivatedViewPager>
+    <!--<LinearLayout-->
+    <!--android:id="@+id/fragments_container"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:layout_above="@+id/navigation"-->
+    <!--android:layout_alignParentLeft="true"-->
+    <!--android:layout_alignParentStart="true"-->
+    <!--android:layout_alignParentTop="true"-->
+    <!--android:orientation="vertical">-->
+    <!--</LinearLayout>-->
 
 
     <android.support.design.widget.BottomNavigationView

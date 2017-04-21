@@ -13,8 +13,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,8 +21,6 @@ import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,9 +35,6 @@ import srgpanov.yandex_test_task.HistoryAdapter;
 import srgpanov.yandex_test_task.R;
 import srgpanov.yandex_test_task.Utils.ConstantManager;
 
-/**
- * Created by Пан on 30.03.2017.
- */
 
 public class HistoryFragment extends android.app.Fragment {
     private RecyclerView mRecyclerView;
@@ -49,7 +42,6 @@ public class HistoryFragment extends android.app.Fragment {
     private RealmResults<TranslatedWords> mTranslatedWords;
     private HistoryAdapter mHistoryAdapter;
     private Realm mRealm;
-    private ActionBar mActionBar;
     private SharedPreferences mPreferences;
 
     //// TODO: 13.04.2017 добавить сортировку через меню
@@ -65,24 +57,23 @@ public class HistoryFragment extends android.app.Fragment {
         mRealm = Realm.getDefaultInstance();
         View rootView = inflater.inflate(R.layout.fragment_history, container, false);
         mHistoryToolbar = (Toolbar) rootView.findViewById(R.id.toolbar_history);
-        AppCompatActivity activity = (AppCompatActivity) getActivity();
-        activity.setSupportActionBar(mHistoryToolbar);
-        mActionBar = activity.getSupportActionBar();
-        setHasOptionsMenu(true);
+        setupToolbar();
+
+
+
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view_history);
         setupRecycleView();
 
         return rootView;
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        super.onCreateOptionsMenu(menu, inflater);
-        inflater.inflate(R.menu.history_menu, menu);
-        MenuItem searchItem = menu.findItem(R.id.menu_search_history);
-        MenuItem deleteItem = menu.findItem(R.id.menu_delete_history);
-        MenuItem sortDescendingItem = menu.findItem(R.id.menu_sort_descending_history);
-        MenuItem sortAscendingItem = menu.findItem(R.id.menu_sort_ascending_history);
+
+    private void setupToolbar() {
+        mHistoryToolbar.inflateMenu(R.menu.history_menu);
+        MenuItem searchItem = mHistoryToolbar.getMenu().findItem(R.id.menu_search_history);
+        MenuItem deleteItem = mHistoryToolbar.getMenu().findItem(R.id.menu_delete_history);
+        MenuItem sortDescendingItem = mHistoryToolbar.getMenu().findItem(R.id.menu_sort_descending_history);
+        MenuItem sortAscendingItem = mHistoryToolbar.getMenu().findItem(R.id.menu_sort_ascending_history);
         deleteItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                                                   @Override
                                                   public boolean onMenuItemClick(MenuItem menuItem) {
@@ -137,6 +128,15 @@ public class HistoryFragment extends android.app.Fragment {
         });
     }
 
+
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if (isVisibleToUser) {
+            mHistoryAdapter.notifyDataSetChanged();
+        }
+    }
+
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -186,6 +186,9 @@ public class HistoryFragment extends android.app.Fragment {
                     case R.id.item_seconadary_text:
                         Toast.makeText(getActivity(), "seconadary", Toast.LENGTH_SHORT).show();
                         break;
+                    case R.id.item_container:
+                        Toast.makeText(getActivity(), "layout", Toast.LENGTH_SHORT).show();
+                        break;
                 }
             }
         });
@@ -215,6 +218,42 @@ public class HistoryFragment extends android.app.Fragment {
             public void onSuccess() {
                 newRealm.close();
                 mHistoryAdapter.notifyItemChanged(position);
+                final Realm newRealm1 = Realm.getDefaultInstance();
+                newRealm1.executeTransactionAsync(new Realm.Transaction() {
+                    @Override
+                    public void execute(Realm realm) {
+                        if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().isFavorits()) {
+                            Number currentIdNum = realm.where(FavoritsWord.class).max("Id");
+                            int nextId;
+                            if (currentIdNum == null) {
+                                nextId = 1;
+                            } else {
+                                nextId = currentIdNum.intValue() + 1;
+                            }
+                            FavoritsWord word = realm.createObject(FavoritsWord.class, nextId);
+                            word.setInputText(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getInputText());
+                            word.setTranslatedText(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getTranslatedText());
+                            word.setDirectionTranslation(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getDirectionTranslation());
+                            word.setFavorits(true);
+                            word.setHistoryWords(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst());
+                            word.setDefenitions(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getDefenitions());
+                            realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().setFavoritsWord(word);
+                        } else {
+                            if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getFavoritsWord() != null)
+                                realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getFavoritsWord().deleteFromRealm();
+                        }
+                    }
+                }, new Realm.Transaction.OnSuccess() {
+                    @Override
+                    public void onSuccess() {
+                        newRealm1.close();
+                    }
+                }, new Realm.Transaction.OnError() {
+                    @Override
+                    public void onError(Throwable error) {
+                        newRealm1.close();
+                    }
+                });
             }
         }, new Realm.Transaction.OnError() {
             @Override
@@ -222,42 +261,7 @@ public class HistoryFragment extends android.app.Fragment {
                 newRealm.close();
             }
         });
-        final Realm newRealm1 = Realm.getDefaultInstance();
-        newRealm1.executeTransactionAsync(new Realm.Transaction() {
-            @Override
-            public void execute(Realm realm) {
-                if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().isFavorits()) {
-                    Number currentIdNum = realm.where(FavoritsWord.class).max("Id");
-                    int nextId;
-                    if (currentIdNum == null) {
-                        nextId = 1;
-                    } else {
-                        nextId = currentIdNum.intValue() + 1;
-                    }
-                    FavoritsWord word = realm.createObject(FavoritsWord.class, nextId);
-                    word.setInputText(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getInputText());
-                    word.setTranslatedText(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getTranslatedText());
-                    word.setDirectionTranslation(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getDirectionTranslation());
-                    word.setFavorits(true);
-                    word.setHistoryWords(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst());
-                    word.setDefenitions(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getDefenitions());
-                    realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().setFavoritsWord(word);
-                } else {
-                    if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getFavoritsWord() != null)
-                        realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getFavoritsWord().deleteFromRealm();
-                }
-            }
-        }, new Realm.Transaction.OnSuccess() {
-            @Override
-            public void onSuccess() {
-                newRealm1.close();
-            }
-        }, new Realm.Transaction.OnError() {
-            @Override
-            public void onError(Throwable error) {
-                newRealm1.close();
-            }
-        });
+
     }
 
 
@@ -418,4 +422,7 @@ public class HistoryFragment extends android.app.Fragment {
 
         });
     }
+
+
+
 }

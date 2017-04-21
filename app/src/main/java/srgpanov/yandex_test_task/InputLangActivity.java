@@ -106,7 +106,7 @@ public class InputLangActivity extends AppCompatActivity {
                 items.add(lang);
             }
         }
-        RealmResults<Langauge> langaugeRealmResults = mRealm.where(Langauge.class).findAll();
+        RealmResults<Langauge> langaugeRealmResults = mRealm.where(Langauge.class).findAll().sort("name");
         items.add(getString(R.string.all_langauge));
         for (Langauge lang : langaugeRealmResults) {
             items.add(lang);

@@ -141,7 +141,6 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
 
     @Override
     public void onChange(Object element) {
-
     }
 
 
