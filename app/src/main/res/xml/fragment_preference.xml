@@ -18,4 +18,5 @@
         android:entries="@array/speech_voices"
         android:entryValues="@array/speech_voices"
         android:dialogTitle="Выбор голоса"/>
+
 </PreferenceScreen>

@@ -112,6 +112,7 @@
                 android:layout_alignEnd="@id/input_edit_text"
                 android:layout_alignRight="@id/input_edit_text"
                 android:layout_below="@id/ic_mic"
+                android:visibility="gone"
                 app:srcCompat="@drawable/ic_speaker_grey_24dp"
                 />
 
@@ -121,6 +122,7 @@
                 android:layout_alignBottom="@id/input_edit_text"
                 android:layout_alignLeft="@id/input_edit_text"
                 android:layout_alignStart="@id/input_edit_text"
+                android:visibility="gone"
                 app:srcCompat="@drawable/ic_clear_grey_24dp"
                 />
         </RelativeLayout>
@@ -155,6 +157,7 @@
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true"
                 android:layout_alignParentTop="true"
+                android:visibility="gone"
                 app:srcCompat="@drawable/ic_speaker_grey_24dp"
                 />
 
@@ -164,6 +167,7 @@
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true"
                 android:layout_below="@id/ic_speaker_output"
+                android:visibility="gone"
                 app:srcCompat="@drawable/ic_bookmark_grey_24dp"
                 />
 
@@ -173,6 +177,7 @@
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true"
                 android:layout_below="@id/ic_bookmark"
+                android:visibility="gone"
                 app:srcCompat="@drawable/ic_share_grey_24dp"
                 />
 
@@ -182,6 +187,7 @@
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true"
                 android:layout_below="@id/ic_share"
+                android:visibility="gone"
                 app:srcCompat="@drawable/ic_content_copy_grey_24dp"
                 />
 

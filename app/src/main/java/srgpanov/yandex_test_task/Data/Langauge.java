@@ -12,7 +12,6 @@ public class Langauge extends RealmObject {
     private int Id;
     private String name;
     private String abbreviation;
-    private boolean favorite;
     private int lastUsage;
 
     public Langauge() {
@@ -23,12 +22,10 @@ public class Langauge extends RealmObject {
         this.name = name;
     }
 
-    public Langauge(int id, String name, String abbreviation, boolean favorite) {
+    public Langauge(int id, String name, String abbreviation) {
         Id = id;
         this.name = name;
         this.abbreviation = abbreviation;
-        this.favorite = favorite;
-
     }
 
     public String getAbbreviation() {
@@ -44,13 +41,7 @@ public class Langauge extends RealmObject {
         this.name = name;
     }
 
-    public boolean isFavorite() {
-        return favorite;
-    }
 
-    public void setFavorite(boolean favorite) {
-        this.favorite = favorite;
-    }
 
     public void setId(int id) {
         Id = id;

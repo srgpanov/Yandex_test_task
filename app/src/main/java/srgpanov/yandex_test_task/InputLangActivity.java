@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -22,11 +23,13 @@ public class InputLangActivity extends AppCompatActivity {
     Intent answerIntent = new Intent();
     private Realm mRealm;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_input_lang);
         mRealm = Realm.getDefaultInstance();
+
         mToolbar = (Toolbar) findViewById(R.id.toolbar_input_lang_activity);
         setSupportActionBar(mToolbar);
         ActionBar actionBar = getSupportActionBar();
@@ -63,21 +66,6 @@ public class InputLangActivity extends AppCompatActivity {
                         setResult(RESULT_OK, answerIntent);
                         finish();
                         break;
-                    case R.id.choose_lang_image_view:
-                        final int itemId = (int) mAdapter.getItemId(position);
-                        if (itemId != -1) {
-                            mRealm.executeTransactionAsync(new Realm.Transaction() {
-                                @Override
-                                public void execute(Realm realm) {
-                                    Langauge langauge = realm.where(Langauge.class).equalTo("Id", itemId).findFirst();
-                                    if (langauge != null) {
-                                        langauge.setFavorite(!langauge.isFavorite());
-                                    }
-                                }
-                            });
-                            mAdapter.notifyItemChanged(position);
-                        }
-                        break;
                 }
 
             }
@@ -85,8 +73,18 @@ public class InputLangActivity extends AppCompatActivity {
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         mLangRecyclerView.setLayoutManager(layoutManager);
-  //      mLangRecyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
+
         mLangRecyclerView.setAdapter(mAdapter);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private ArrayList<Object> getListForLangAdapter() {
@@ -96,13 +94,6 @@ public class InputLangActivity extends AppCompatActivity {
         if (recently_used_lang.size() != 0) {
             items.add(getString(R.string.recently_used));
             for (Langauge lang : recently_used_lang) {
-                items.add(lang);
-            }
-        }
-        RealmResults<Langauge> favoritLang = mRealm.where(Langauge.class).equalTo("favorite", true).findAll();
-        if (favoritLang.size() != 0) {
-            items.add(getString(R.string.favorits));
-            for (Langauge lang : favoritLang) {
                 items.add(lang);
             }
         }

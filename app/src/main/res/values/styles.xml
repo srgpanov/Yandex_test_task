@@ -13,6 +13,7 @@
         <item name="colorControlNormal">@color/primary_text</item>
 
 
+
     </style>
     <style name="AppTheme.WithToolbar" parent="Theme.AppCompat.Light">
         <item name="android:colorPrimary">@color/primary</item>

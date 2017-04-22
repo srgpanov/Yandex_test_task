@@ -8,17 +8,16 @@ import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
+import srgpanov.yandex_test_task.fragments.TranslateFragment;
+
 import static srgpanov.yandex_test_task.R.id.translate;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnChoiceItem{
 
     SharedPreferences mPreferences;
     private DeactivatedViewPager mViewPager;
     private FragmentPageAdapter mPageAdapter;
-
-
-
-
+    BottomNavigationView mNavigation;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -57,89 +56,19 @@ public class MainActivity extends AppCompatActivity {
         mViewPager.setOffscreenPageLimit(3);
         Fragment fragment=getFragmentManager().findFragmentByTag("android:switcher:" + R.id.view_pager + ":" + mViewPager.getCurrentItem());
 
+        mNavigation = (BottomNavigationView) findViewById(R.id.navigation);
+        mNavigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
-
-
-
-
-//        mFragmentManager = getFragmentManager();
-//        mTranslateFragment = new TranslateFragment();
-//        mHistoryFragment = new HistoryFragment();
-//        mFavoritsFragment = new FavoritsFragment();
-//        mSettingFragmentContainer = new SettingFragmentContainer();
-//        loadLastFragment(savedInstanceState);
-//        if (savedInstanceState!=null){
-//            wordLastId=savedInstanceState.getInt(ConstantManager.LAST_DICT_ID);
-//        }
-        BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
 
     }
 
-
-//    private void loadLastFragment(Bundle savedInstanceState) {
-//        if (savedInstanceState == null) {
-//            mFragmentManager.beginTransaction()
-//                    .add(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE)
-//                    .commit();
-//        } else {
-//            mCurrentFragment = savedInstanceState.getInt(ConstantManager.CURRENT_FRAGMENT);
-//            switch (mCurrentFragment) {
-//                case 1:
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
-//                    break;
-//                case 2:
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mHistoryFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
-//                    break;
-//                case 3:
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mFavoritsFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
-//                    break;
-//                case 4:
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mSettingFragmentContainer, ConstantManager.FRAGMENT_TRANSLATE).commit();
-//                    break;
-//                default:
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
-//            }
-//
-//        }
-//    }
-
-//    private void changeFragment(int position) {
-//
-//        switch (position) {
-//            case 0:
-//                if (!mTranslateFragment.isVisible()) {
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
-//                    mCurrentFragment = 1;
-//                }
-//                break;
-//            case 1:
-//                if (!mHistoryFragment.isVisible()) {
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mHistoryFragment, ConstantManager.FRAGMENT_HISTORY).commit();
-//                    mCurrentFragment = 2;
-//                }
-//                break;
-//            case 2:
-//                if (!mFavoritsFragment.isVisible()) {
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mFavoritsFragment, ConstantManager.FRAGMENT_FAVORITS).commit();
-//                    mCurrentFragment = 3;
-//                }
-//                break;
-//            case 3:
-//                if (!mSettingFragmentContainer.isVisible()) {
-//                    mFragmentManager.beginTransaction().replace(R.id.fragments_container, mSettingFragmentContainer, ConstantManager.FRAGMENT_SETTING).commit();
-//                    mCurrentFragment = 4;
-//                }
-//                break;
-//            default:
-//                mFragmentManager.beginTransaction().replace(R.id.fragments_container, mTranslateFragment, ConstantManager.FRAGMENT_TRANSLATE).commit();
-//
-//        }
-//
-//    }
-
-
-
-
+    @Override
+    public void OnChoiceItem(int Id, boolean isHistory) {
+        mViewPager.setCurrentItem(0);
+        mNavigation.setSelectedItemId(translate);
+        Fragment fragment=getFragmentManager().findFragmentByTag("android:switcher:" + R.id.view_pager + ":" + mViewPager.getCurrentItem());
+        TranslateFragment translateFragment = (TranslateFragment)fragment;
+        translateFragment.showWordFromDb(Id,isHistory);
+    }
 }

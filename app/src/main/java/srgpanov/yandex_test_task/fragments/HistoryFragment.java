@@ -32,6 +32,7 @@ import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
 import srgpanov.yandex_test_task.DeleteHistoryDialog;
 import srgpanov.yandex_test_task.HistoryAdapter;
+import srgpanov.yandex_test_task.OnChoiceItem;
 import srgpanov.yandex_test_task.R;
 import srgpanov.yandex_test_task.Utils.ConstantManager;
 
@@ -43,6 +44,7 @@ public class HistoryFragment extends android.app.Fragment {
     private HistoryAdapter mHistoryAdapter;
     private Realm mRealm;
     private SharedPreferences mPreferences;
+    private OnChoiceItem mListener;
 
     //// TODO: 13.04.2017 добавить сортировку через меню
     @Override
@@ -67,6 +69,11 @@ public class HistoryFragment extends android.app.Fragment {
         return rootView;
     }
 
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        mListener=(OnChoiceItem)getActivity();
+        super.onActivityCreated(savedInstanceState);
+    }
 
     private void setupToolbar() {
         mHistoryToolbar.inflateMenu(R.menu.history_menu);
@@ -181,13 +188,13 @@ public class HistoryFragment extends android.app.Fragment {
                         setFavoritWord(position);
                         break;
                     case R.id.item_primary_text:
-                        Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();
+                        mListener.OnChoiceItem((int)mHistoryAdapter.getItemId(position), true);
                         break;
                     case R.id.item_seconadary_text:
-                        Toast.makeText(getActivity(), "seconadary", Toast.LENGTH_SHORT).show();
+                        mListener.OnChoiceItem((int)mHistoryAdapter.getItemId(position), true);
                         break;
                     case R.id.item_container:
-                        Toast.makeText(getActivity(), "layout", Toast.LENGTH_SHORT).show();
+                        mListener.OnChoiceItem((int)mHistoryAdapter.getItemId(position), true);
                         break;
                 }
             }
@@ -202,6 +209,7 @@ public class HistoryFragment extends android.app.Fragment {
         super.onDestroyView();
         mRealm.close();
     }
+
 
 
     private void setFavoritWord(final int position) {

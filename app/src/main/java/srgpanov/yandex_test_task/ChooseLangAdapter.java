@@ -4,7 +4,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -21,6 +20,7 @@ public class ChooseLangAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     private List<Object> mItems;
     private final int LANGAUGE = 0, CATEGORY = 1;
     private ChoseLangHolder.CustomClickListener mCustomClickListener;
+
 
     public ChooseLangAdapter(List<Object> items, ChoseLangHolder.CustomClickListener customClickListener) {
         this.mCustomClickListener = customClickListener;
@@ -41,6 +41,7 @@ public class ChooseLangAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         RecyclerView.ViewHolder viewHolder;
+
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
         switch (viewType) {
@@ -100,11 +101,6 @@ public class ChooseLangAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         Langauge langauge = (Langauge) mItems.get(position);
         if (langauge != null) {
             langHolder.mLangTextView.setText(langauge.getName());
-            if (langauge.isFavorite()) {
-                langHolder.mImageView.setImageResource(R.drawable.ic_star_yellow_24dp);
-            } else {
-                langHolder.mImageView.setImageResource(R.drawable.ic_star_border_grey_24dp);
-            }
         }
     }
 
@@ -116,39 +112,37 @@ public class ChooseLangAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
     }
 
-//создаём ViewHolder, в нём находим все View нашео итема
-public static class ChoseLangHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-    private TextView mLangTextView;
-    private ImageView mImageView;
-    private CustomClickListener mListener;
+    //создаём ViewHolder, в нём находим все View нашео итема
+    public static class ChoseLangHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        private TextView mLangTextView;
 
-    public ChoseLangHolder(View itemView, CustomClickListener customClickListener) {
-        super(itemView);
-        this.mListener = customClickListener;
-        mLangTextView = (TextView) itemView.findViewById(R.id.choose_lang_text_view);
-        mLangTextView.setOnClickListener(this);
-        mImageView = (ImageView) itemView.findViewById(R.id.choose_lang_image_view);
-        mImageView.setOnClickListener(this);
-    }
+        private CustomClickListener mListener;
 
-    public interface CustomClickListener {
-        void onLangClickListener(View view, int position);
-    }
+        public ChoseLangHolder(View itemView, CustomClickListener customClickListener) {
+            super(itemView);
+            this.mListener = customClickListener;
+            mLangTextView = (TextView) itemView.findViewById(R.id.choose_lang_text_view);
+            mLangTextView.setOnClickListener(this);
+        }
 
-    @Override
-    public void onClick(View view) {
-        if (mListener != null) {
-            mListener.onLangClickListener(view, getAdapterPosition());
+        public interface CustomClickListener {
+            void onLangClickListener(View view, int position);
+        }
+
+        @Override
+        public void onClick(View view) {
+            if (mListener != null) {
+                mListener.onLangClickListener(view, getAdapterPosition());
+            }
         }
     }
-}
 
-public static class CategoryHolder extends RecyclerView.ViewHolder {
-    private TextView mcategoryTextView;
+    public static class CategoryHolder extends RecyclerView.ViewHolder {
+        private TextView mcategoryTextView;
 
-    public CategoryHolder(View itemView) {
-        super(itemView);
-        mcategoryTextView = (TextView) itemView.findViewById(R.id.langauge_category);
+        public CategoryHolder(View itemView) {
+            super(itemView);
+            mcategoryTextView = (TextView) itemView.findViewById(R.id.langauge_category);
+        }
     }
-}
 }

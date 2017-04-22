@@ -31,6 +31,7 @@ import io.realm.RealmResults;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.DeleteFavotitsDialog;
 import srgpanov.yandex_test_task.FavoritsAdapter;
+import srgpanov.yandex_test_task.OnChoiceItem;
 import srgpanov.yandex_test_task.R;
 import srgpanov.yandex_test_task.Utils.ConstantManager;
 
@@ -45,6 +46,7 @@ public class FavoritsFragment extends android.app.Fragment  {
     private FavoritsAdapter mFavoritsAdapter;
     private Realm mRealm;
     private SharedPreferences mPreferences;
+    private OnChoiceItem mListener;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -64,6 +66,12 @@ public class FavoritsFragment extends android.app.Fragment  {
         setupRecycleView();
 
         return rootView;
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        mListener=(OnChoiceItem)getActivity();
     }
 
     private void setupToolbar() {
@@ -127,68 +135,7 @@ public class FavoritsFragment extends android.app.Fragment  {
     }
 
 
-//    @Override
-//    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-//        menu.clear();
-//        inflater.inflate(R.menu.favorits_menu, menu);
-//        super.onCreateOptionsMenu(menu, inflater);
-//        MenuItem searchItem = menu.findItem(R.id.menu_search_favorits);
-//        MenuItem deleteItem = menu.findItem(R.id.menu_delete_favorits);
-//        MenuItem sortDescendingItem = menu.findItem(R.id.menu_sort_descending_favorits);
-//        MenuItem sortAscendingItem = menu.findItem(R.id.menu_sort_ascending_favorits);
-//        deleteItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-//            @Override
-//            public boolean onMenuItemClick(MenuItem menuItem) {
-//                FragmentManager manager = getFragmentManager();
-//                DeleteFavotitsDialog deleteFavotitsDialog = new DeleteFavotitsDialog();
-//                deleteFavotitsDialog.setTargetFragment(FavoritsFragment.this, ConstantManager.CODE_DELETE_FAVORITS);
-//                deleteFavotitsDialog.show(manager, "deleteDialog");
-//                return true;
-//            }
-//        });
-//
-//        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
-//        searchView.setQueryHint(getString(R.string.query_hint));
-//
-//        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-//            @Override
-//            public boolean onQueryTextSubmit(String query) {
-//                return false;
-//            }
-//
-//            @Override
-//            public boolean onQueryTextChange(String newText) {
-//                mFavoritsAdapter.getFilter().filter(newText);
-//                return true;
-//            }
-//        });
-//        sortAscendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-//            @Override
-//            public boolean onMenuItemClick(MenuItem menuItem) {
-//                if (!mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true)) {
-//                    SharedPreferences.Editor editor = mPreferences.edit();
-//                    editor.putBoolean(ConstantManager.SORTING_FAVORITS, true);
-//                    editor.apply();
-//                    mFavoritsAdapter.sort(true);
-//                    Toast.makeText(getActivity(), "sortAscendingItem", Toast.LENGTH_SHORT).show();
-//                    return true;
-//                } else return true;
-//            }
-//        });
-//        sortDescendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-//            @Override
-//            public boolean onMenuItemClick(MenuItem menuItem) {
-//                if (mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true)) {
-//                    SharedPreferences.Editor editor = mPreferences.edit();
-//                    editor.putBoolean(ConstantManager.SORTING_FAVORITS, false);
-//                    editor.apply();
-//                    mFavoritsAdapter.sort(false);
-//                    Toast.makeText(getActivity(), "sortDescendingItem", Toast.LENGTH_SHORT).show();
-//                    return true;
-//                } else return true;
-//            }
-//        });
-//    }
+
 
     @Override
     public void onDestroyView() {
@@ -209,10 +156,10 @@ public class FavoritsFragment extends android.app.Fragment  {
                         mFavoritsAdapter.remove(position);
                         break;
                     case R.id.item_primary_text:
-                        Toast.makeText(getActivity(), "primary_text", Toast.LENGTH_SHORT).show();
+                        mListener.OnChoiceItem((int)mFavoritsAdapter.getItemId(position),false);
                         break;
                     case R.id.item_seconadary_text:
-                        Toast.makeText(getActivity(), "secondary", Toast.LENGTH_SHORT).show();
+                        mListener.OnChoiceItem((int)mFavoritsAdapter.getItemId(position),false);
                         break;
                 }
             }

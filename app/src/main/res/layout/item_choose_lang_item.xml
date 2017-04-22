@@ -13,20 +13,12 @@
         android:layout_centerVertical="true"
         android:layout_marginLeft="@dimen/list_item_padding_16_dp"
         android:layout_marginStart="@dimen/list_item_padding_16_dp"
+        android:layout_marginEnd="@dimen/activity_horizontal_margin"
+        android:layout_marginRight="@dimen/activity_horizontal_margin"
         android:textStyle="bold"
-        android:layout_toLeftOf="@+id/choose_lang_image_view"
         android:gravity="left|center_vertical"
         android:textSize="16sp"/>
-    <ImageView
-        android:id="@+id/choose_lang_image_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:layout_marginLeft="@dimen/list_item_padding_16_dp"
-        android:layout_marginRight="@dimen/list_item_padding_16_dp"
-        app:srcCompat="@drawable/ic_star_border_grey_24dp"/>
+
 
 
 </RelativeLayout>

@@ -69,7 +69,7 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
                     case "Медленная":
                         delay = ConstantManager.DELAY_HIGHT;
                         break;
-                    default: delay=2;
+                    default: delay=2000;
                 }
                 SharedPreferences.Editor editor = mPreferences.edit();
                 editor.putInt(ConstantManager.DELAY_TO_TRANSLATE, delay);
@@ -81,9 +81,15 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     }
     private void updateListPrefSummary() {
         ListPreference preferenceVoice = (ListPreference) findPreference("speech_voice");
+        if (preferenceVoice.getEntry()==null){
+            preferenceVoice.setSummary(getString(R.string.curent_voice) +" "+ "Захар");
+        }else
         preferenceVoice.setSummary(getString(R.string.curent_voice) +" "+ preferenceVoice.getEntry());
 
         ListPreference preferenceDelay = (ListPreference) findPreference("delay_to_translate");
+        if(preferenceDelay.getEntry()==null){
+            preferenceDelay.setSummary("Средняя"+" "+getString(R.string.curent_delay));
+        }else
         preferenceDelay.setSummary(preferenceDelay.getEntry()+" "+getString(R.string.curent_delay));
 
     }

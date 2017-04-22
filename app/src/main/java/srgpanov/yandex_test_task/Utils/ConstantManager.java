@@ -53,4 +53,8 @@ public interface ConstantManager {
     String SORTING_HISTORY="sortingHistory";
     String SORTING_FAVORITS="sortingFavorits";
     String LAST_LANG = "lastLang";
+
+
+    String LAST_INLANG ="lastInLang" ;
+    String LAST_OUTLANG="lastOutLang";
 }

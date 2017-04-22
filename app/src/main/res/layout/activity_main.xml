@@ -17,16 +17,6 @@
         >
 
     </srgpanov.yandex_test_task.DeactivatedViewPager>
-    <!--<LinearLayout-->
-    <!--android:id="@+id/fragments_container"-->
-    <!--android:layout_width="match_parent"-->
-    <!--android:layout_height="match_parent"-->
-    <!--android:layout_above="@+id/navigation"-->
-    <!--android:layout_alignParentLeft="true"-->
-    <!--android:layout_alignParentStart="true"-->
-    <!--android:layout_alignParentTop="true"-->
-    <!--android:orientation="vertical">-->
-    <!--</LinearLayout>-->
 
 
     <android.support.design.widget.BottomNavigationView
@@ -36,10 +26,11 @@
         android:layout_alignParentBottom="true"
         android:layout_gravity="bottom"
         android:background="@color/primary"
+
         app:elevation="8dp"
         app:itemBackground="@color/primary"
-        app:itemIconTint="@color/icons"
-        app:itemTextColor="@color/secondary_text"
+        app:itemIconTint="@color/primary_text"
+        app:itemTextColor="@color/primary_text"
         app:menu="@menu/navigation"/>
 
 </RelativeLayout>
