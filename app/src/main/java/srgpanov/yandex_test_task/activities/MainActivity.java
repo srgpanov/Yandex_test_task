@@ -1,4 +1,4 @@
-package srgpanov.yandex_test_task;
+package srgpanov.yandex_test_task.activities;
 
 import android.app.Fragment;
 import android.content.SharedPreferences;
@@ -8,11 +8,16 @@ import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
+import srgpanov.yandex_test_task.Utils.DeactivatedViewPager;
+import srgpanov.yandex_test_task.adapters.FragmentPageAdapter;
+import srgpanov.yandex_test_task.OnChoiceItem;
+import srgpanov.yandex_test_task.R;
+import srgpanov.yandex_test_task.YandexAplication;
 import srgpanov.yandex_test_task.fragments.TranslateFragment;
 
 import static srgpanov.yandex_test_task.R.id.translate;
 
-public class MainActivity extends AppCompatActivity implements OnChoiceItem{
+public class MainActivity extends AppCompatActivity implements OnChoiceItem {
 
     SharedPreferences mPreferences;
     private DeactivatedViewPager mViewPager;
@@ -54,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements OnChoiceItem{
         mViewPager = (DeactivatedViewPager) findViewById(R.id.view_pager);
         mViewPager.setAdapter(mPageAdapter);
         mViewPager.setOffscreenPageLimit(3);
-        Fragment fragment=getFragmentManager().findFragmentByTag("android:switcher:" + R.id.view_pager + ":" + mViewPager.getCurrentItem());
+
 
         mNavigation = (BottomNavigationView) findViewById(R.id.navigation);
         mNavigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
@@ -62,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements OnChoiceItem{
 
 
     }
-
+//переходим на фрагмент перевода и вызываем метод отображения слова из истории
     @Override
     public void OnChoiceItem(int Id, boolean isHistory) {
         mViewPager.setCurrentItem(0);

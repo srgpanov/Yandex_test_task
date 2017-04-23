@@ -75,7 +75,7 @@ app:layout_behavior="@string/appbar_scrolling_view_behavior">
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:theme="@style/AppTheme"
-    tools:context="srgpanov.yandex_test_task.MainActivity">
+    tools:context="srgpanov.yandex_test_task.activities.MainActivity">
 
     <RelativeLayout
         android:id="@+id/input_edit_text_container"
@@ -83,7 +83,7 @@ app:layout_behavior="@string/appbar_scrolling_view_behavior">
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true">
 
-        <srgpanov.yandex_test_task.YandexEditText
+        <srgpanov.yandex_test_task.Utils.YandexEditText
             android:id="@+id/input_edit_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -8,7 +8,9 @@ import java.util.List;
 /**
  * Created by Пан on 28.03.2017.
  */
-
+/**
+ * ответ который приходит от АПИ переводчика
+ */
 public class TranslateResponse {
     @SerializedName("code")
     @Expose

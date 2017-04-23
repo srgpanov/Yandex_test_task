@@ -16,7 +16,7 @@ import srgpanov.yandex_test_task.Utils.ConstantManager;
 
 public class DeleteHistoryDialog extends DialogFragment {
 
-
+//диалог подтверждения удаления истории
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -31,6 +31,7 @@ public class DeleteHistoryDialog extends DialogFragment {
         builder.setPositiveButton(deleteButton, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
+                //выбор передаём интентом в фрагмент истории
                 Intent intent = new Intent();
                 intent.putExtra(ConstantManager.TAG_DELETE_HISTORY,true);
                 getTargetFragment().onActivityResult(getTargetRequestCode(), Activity.RESULT_OK,intent);

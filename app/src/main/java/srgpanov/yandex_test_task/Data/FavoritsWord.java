@@ -9,6 +9,9 @@ import srgpanov.yandex_test_task.Data.Dictionary.Defenition;
  * Created by Пан on 12.04.2017.
  */
 
+/**
+ * Модель для хранения данных избранного
+ */
 public class FavoritsWord extends RealmObject {
     @PrimaryKey
     private int Id;

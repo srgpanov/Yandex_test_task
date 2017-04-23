@@ -16,7 +16,7 @@ import srgpanov.yandex_test_task.Utils.ConstantManager;
 
 public class DeleteFavotitsDialog extends DialogFragment {
 
-
+//диалог подтверждения удаления избранного
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -31,6 +31,7 @@ public class DeleteFavotitsDialog extends DialogFragment {
         builder.setPositiveButton(deleteButton, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
+                //выбор передаём интентом в фрагмент избранного
                 Intent intent = new Intent();
                 intent.putExtra(ConstantManager.TAG_DELETE_FAVORITS,true);
                 getTargetFragment().onActivityResult(getTargetRequestCode(), Activity.RESULT_OK,intent);

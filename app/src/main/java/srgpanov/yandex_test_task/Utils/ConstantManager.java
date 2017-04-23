@@ -6,6 +6,9 @@ import ru.yandex.speechkit.Vocalizer;
  * Created by Пан on 30.03.2017.
  */
 
+/**
+ * Класс хранящий все константы приложения
+ */
 public interface ConstantManager {
     String KEY_API_TRANSLATE = "trnsl.1.1.20170328T172834Z.4d83a6640bf059fd.aedc220f03882bdaa7022f861ed4f4f895d1e4be";
     String KEY_API_SPEECHKIT = "4001d129-f936-4796-9609-98280f01e791";
@@ -14,10 +17,7 @@ public interface ConstantManager {
     String BASE_DICT_URL = "https://dictionary.yandex.net/api/v1/dicservice.json/";
     //todo сделать изменение ключа из настроек
 
-    String FRAGMENT_TRANSLATE = "translate";
-    String FRAGMENT_HISTORY = "history";
-    String FRAGMENT_FAVORITS = "favorits";
-    String FRAGMENT_SETTING = "setting";
+
 
     String TOOLBAR_LEFT_TEXT_VIEW = "lefttxtview";
     String TOOLBAR_RIGHT_TEXT_VIEW = "righttxtview";
@@ -45,8 +45,6 @@ public interface ConstantManager {
     int CODE_DELETE_HISTORY =104;
     int CODE_DELETE_FAVORITS = 105;
 
-
-    String CURRENT_FRAGMENT ="current_fragment" ;
     String LAST_DICT_ID = "last_word";
     String TAG_DELETE_HISTORY ="deleteHistory" ;
     String TAG_DELETE_FAVORITS ="deleteFavorits" ;

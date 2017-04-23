@@ -8,7 +8,9 @@ import srgpanov.yandex_test_task.Data.Dictionary.Defenition;
 /**
  * Created by Пан on 30.03.2017.
  */
-
+/**
+ * Модель для хранения данных истории переводов
+ */
 public class TranslatedWords extends RealmObject {
     @PrimaryKey
     private int Id;

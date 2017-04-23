@@ -24,14 +24,13 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
 import srgpanov.yandex_test_task.DeleteHistoryDialog;
-import srgpanov.yandex_test_task.HistoryAdapter;
+import srgpanov.yandex_test_task.adapters.HistoryAdapter;
 import srgpanov.yandex_test_task.OnChoiceItem;
 import srgpanov.yandex_test_task.R;
 import srgpanov.yandex_test_task.Utils.ConstantManager;
@@ -46,7 +45,6 @@ public class HistoryFragment extends android.app.Fragment {
     private SharedPreferences mPreferences;
     private OnChoiceItem mListener;
 
-    //// TODO: 13.04.2017 добавить сортировку через меню
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,9 +58,6 @@ public class HistoryFragment extends android.app.Fragment {
         View rootView = inflater.inflate(R.layout.fragment_history, container, false);
         mHistoryToolbar = (Toolbar) rootView.findViewById(R.id.toolbar_history);
         setupToolbar();
-
-
-
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.recycler_view_history);
         setupRecycleView();
 
@@ -71,11 +66,11 @@ public class HistoryFragment extends android.app.Fragment {
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        mListener=(OnChoiceItem)getActivity();
+        mListener=(OnChoiceItem)getActivity();//листенер для
         super.onActivityCreated(savedInstanceState);
     }
 
-    private void setupToolbar() {
+    private void setupToolbar() {//сделал меню через тулбар,а не через экшн бар,
         mHistoryToolbar.inflateMenu(R.menu.history_menu);
         MenuItem searchItem = mHistoryToolbar.getMenu().findItem(R.id.menu_search_history);
         MenuItem deleteItem = mHistoryToolbar.getMenu().findItem(R.id.menu_delete_history);
@@ -107,6 +102,7 @@ public class HistoryFragment extends android.app.Fragment {
                 return true;
             }
         });
+        //вешаем листенеры на кнопки сортировки и сохраняем в шаред преференс
         sortAscendingItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
@@ -115,7 +111,6 @@ public class HistoryFragment extends android.app.Fragment {
                     editor.putBoolean(ConstantManager.SORTING_HISTORY, true);
                     editor.apply();
                     mHistoryAdapter.sort(true);
-                    Toast.makeText(getActivity(), "sortAscendingItem", Toast.LENGTH_SHORT).show();
                     return true;
                 } else return true;
             }
@@ -128,14 +123,13 @@ public class HistoryFragment extends android.app.Fragment {
                     editor.putBoolean(ConstantManager.SORTING_HISTORY, false);
                     editor.apply();
                     mHistoryAdapter.sort(false);
-                    Toast.makeText(getActivity(), "sortDescendingItem", Toast.LENGTH_SHORT).show();
                     return true;
                 } else return true;
             }
         });
     }
 
-
+//при переключенни на фрагмент во вью пейджере обновляем данные в адаптере
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
@@ -143,7 +137,7 @@ public class HistoryFragment extends android.app.Fragment {
             mHistoryAdapter.notifyDataSetChanged();
         }
     }
-
+//получаем результат из диалог фрагмента удаления истории
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -160,13 +154,13 @@ public class HistoryFragment extends android.app.Fragment {
                     public void onSuccess() {
                         newRealm.close();
                         mHistoryAdapter.notifyDataSetChanged();
-                        Toast.makeText(getActivity(), "delete", Toast.LENGTH_SHORT).show();
+
                     }
                 }, new Realm.Transaction.OnError() {
                     @Override
                     public void onError(Throwable error) {
                         newRealm.close();
-                        Toast.makeText(getActivity(), "no", Toast.LENGTH_SHORT).show();
+
                     }
                 });
 
@@ -211,13 +205,13 @@ public class HistoryFragment extends android.app.Fragment {
     }
 
 
-
+//метод добавляет слово в избранное
     private void setFavoritWord(final int position) {
         final int id = (int)mHistoryAdapter.getItemId(position);
         final Realm newRealm = Realm.getDefaultInstance();
         newRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
-            public void execute(Realm realm) {
+            public void execute(Realm realm) {//меняем "избранноесть" слова в истории
                 boolean fav = realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().isFavorits();
                 realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().setFavorits(!fav);
             }
@@ -230,7 +224,7 @@ public class HistoryFragment extends android.app.Fragment {
                 newRealm1.executeTransactionAsync(new Realm.Transaction() {
                     @Override
                     public void execute(Realm realm) {
-                        if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().isFavorits()) {
+                        if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().isFavorits()) {//если слово в истории сделали избранным то добавляем слово в избранное
                             Number currentIdNum = realm.where(FavoritsWord.class).max("Id");
                             int nextId;
                             if (currentIdNum == null) {
@@ -246,7 +240,7 @@ public class HistoryFragment extends android.app.Fragment {
                             word.setHistoryWords(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst());
                             word.setDefenitions(realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getDefenitions());
                             realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().setFavoritsWord(word);
-                        } else {
+                        } else {//если убрали "избранность" у слова в истории то удаляем связанное "избранное" слово
                             if (realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getFavoritsWord() != null)
                                 realm.where(TranslatedWords.class).equalTo("Id", id).findFirst().getFavoritsWord().deleteFromRealm();
                         }
@@ -271,8 +265,6 @@ public class HistoryFragment extends android.app.Fragment {
         });
 
     }
-
-
     private void setUpItemTouchHelper() {
         ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
 
@@ -298,9 +290,7 @@ public class HistoryFragment extends android.app.Fragment {
             public int getSwipeDirs(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
                 int position = viewHolder.getAdapterPosition();
                 HistoryAdapter adapter = (HistoryAdapter) recyclerView.getAdapter();
-//                if(adapter.isUndoOn()&&adapter.isPendingRemoval(position)){
-//                    return 0;
-//                }
+
                 return super.getSwipeDirs(recyclerView, viewHolder);
             }
 
@@ -308,21 +298,13 @@ public class HistoryFragment extends android.app.Fragment {
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 int swipedPosition = viewHolder.getAdapterPosition();
                 HistoryAdapter adapter = (HistoryAdapter) mRecyclerView.getAdapter();
-//                boolean undoOn = adapter.isUndoOn();
-//                if (undoOn) {
-//                    adapter.pendingRemoval(swipedPosition);
-//                } else {
                 adapter.remove(swipedPosition);
-//                }
-
             }
 
             @Override
             public void onChildDraw(Canvas canvas, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
                 View itemView = viewHolder.itemView;
-
                 if (viewHolder.getAdapterPosition() == -1) {
-                    // not interested in those
                     return;
                 }
                 if (!initiated) {
@@ -350,49 +332,28 @@ public class HistoryFragment extends android.app.Fragment {
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
         itemTouchHelper.attachToRecyclerView(mRecyclerView);
     }
-
+//рисуем анимацию удаления
     private void setUpAnimationDecoratorHelper() {
         mRecyclerView.addItemDecoration(new RecyclerView.ItemDecoration() {
-
-            // we want to cache this and not allocate anything repeatedly in the onDraw method
             Drawable background;
             boolean initiated;
-
             private void init() {
                 background = new ColorDrawable(Color.RED);
                 initiated = true;
             }
-
             @Override
             public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
-
                 if (!initiated) {
                     init();
                 }
-
                 // only if animation is in progress
                 if (parent.getItemAnimator().isRunning()) {
-
-                    // some items might be animating down and some items might be animating up to close the gap left by the removed item
-                    // this is not exclusive, both movement can be happening at the same time
-                    // to reproduce this leave just enough items so the first one and the last one would be just a little off screen
-                    // then remove one from the middle
-
-                    // find first child with translationY > 0
-                    // and last one with translationY < 0
-                    // we're after a rect that is not covered in recycler-view views at this point in time
                     View lastViewComingDown = null;
                     View firstViewComingUp = null;
-
-                    // this is fixed
                     int left = 0;
                     int right = parent.getWidth();
-
-                    // this we need to find out
                     int top = 0;
                     int bottom = 0;
-
-                    // find relevant translating views
                     int childCount = parent.getLayoutManager().getChildCount();
                     for (int i = 0; i < childCount; i++) {
                         View child = parent.getLayoutManager().getChildAt(i);
@@ -406,7 +367,6 @@ public class HistoryFragment extends android.app.Fragment {
                             }
                         }
                     }
-
                     if (lastViewComingDown != null && firstViewComingUp != null) {
                         // views are coming down AND going up to fill the void
                         top = lastViewComingDown.getBottom() + (int) lastViewComingDown.getTranslationY();

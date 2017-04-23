@@ -24,22 +24,25 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
 import srgpanov.yandex_test_task.DeleteFavotitsDialog;
-import srgpanov.yandex_test_task.FavoritsAdapter;
 import srgpanov.yandex_test_task.OnChoiceItem;
 import srgpanov.yandex_test_task.R;
 import srgpanov.yandex_test_task.Utils.ConstantManager;
+import srgpanov.yandex_test_task.adapters.FavoritsAdapter;
 
 /**
  * Created by Пан on 28.03.2017.
  */
 
-public class FavoritsFragment extends android.app.Fragment  {
+/**
+ * Коментарии аналогичны HistoryFragment;
+ */
+
+public class FavoritsFragment extends android.app.Fragment {
     private RecyclerView mRecyclerViewFavorits;
     private Toolbar mFavoritsToolbar;
     private RealmResults<FavoritsWord> mFavoritsWords;
@@ -51,9 +54,8 @@ public class FavoritsFragment extends android.app.Fragment  {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mPreferences= PreferenceManager.getDefaultSharedPreferences(getActivity());
+        mPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
     }
-
 
     @Nullable
     @Override
@@ -71,7 +73,7 @@ public class FavoritsFragment extends android.app.Fragment  {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        mListener=(OnChoiceItem)getActivity();
+        mListener = (OnChoiceItem) getActivity();
     }
 
     private void setupToolbar() {
@@ -114,7 +116,7 @@ public class FavoritsFragment extends android.app.Fragment  {
                     editor.putBoolean(ConstantManager.SORTING_FAVORITS, true);
                     editor.apply();
                     mFavoritsAdapter.sort(true);
-                    Toast.makeText(getActivity(), "sortAscendingItem", Toast.LENGTH_SHORT).show();
+
                     return true;
                 } else return true;
             }
@@ -127,15 +129,12 @@ public class FavoritsFragment extends android.app.Fragment  {
                     editor.putBoolean(ConstantManager.SORTING_FAVORITS, false);
                     editor.apply();
                     mFavoritsAdapter.sort(false);
-                    Toast.makeText(getActivity(), "sortDescendingItem", Toast.LENGTH_SHORT).show();
+
                     return true;
                 } else return true;
             }
         });
     }
-
-
-
 
     @Override
     public void onDestroyView() {
@@ -148,7 +147,7 @@ public class FavoritsFragment extends android.app.Fragment  {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         mRecyclerViewFavorits.setLayoutManager(linearLayoutManager);
         mRecyclerViewFavorits.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-        mFavoritsAdapter = new FavoritsAdapter(mFavoritsWords, mRealm,mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true), new FavoritsAdapter.ViewHolder.CustomClickListener() {
+        mFavoritsAdapter = new FavoritsAdapter(mFavoritsWords, mRealm, mPreferences.getBoolean(ConstantManager.SORTING_FAVORITS, true), new FavoritsAdapter.ViewHolder.CustomClickListener() {
             @Override
             public void onItemClickListener(View view, int position) {
                 switch (view.getId()) {
@@ -156,10 +155,10 @@ public class FavoritsFragment extends android.app.Fragment  {
                         mFavoritsAdapter.remove(position);
                         break;
                     case R.id.item_primary_text:
-                        mListener.OnChoiceItem((int)mFavoritsAdapter.getItemId(position),false);
+                        mListener.OnChoiceItem((int) mFavoritsAdapter.getItemId(position), false);
                         break;
                     case R.id.item_seconadary_text:
-                        mListener.OnChoiceItem((int)mFavoritsAdapter.getItemId(position),false);
+                        mListener.OnChoiceItem((int) mFavoritsAdapter.getItemId(position), false);
                         break;
                 }
             }
@@ -199,13 +198,13 @@ public class FavoritsFragment extends android.app.Fragment  {
                     public void onSuccess() {
                         newRealm.close();
                         mFavoritsAdapter.notifyDataSetChanged();
-                        Toast.makeText(getActivity(), "delete", Toast.LENGTH_SHORT).show();
+
                     }
                 }, new Realm.Transaction.OnError() {
                     @Override
                     public void onError(Throwable error) {
                         newRealm.close();
-                        Toast.makeText(getActivity(), "no", Toast.LENGTH_SHORT).show();
+
                     }
                 });
             }
@@ -237,24 +236,15 @@ public class FavoritsFragment extends android.app.Fragment  {
             public int getSwipeDirs(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
                 int position = viewHolder.getAdapterPosition();
                 FavoritsAdapter adapter = (FavoritsAdapter) recyclerView.getAdapter();
-//                if(adapter.isUndoOn()&&adapter.isPendingRemoval(position)){
-//                    return 0;
-//                }
                 return super.getSwipeDirs(recyclerView, viewHolder);
             }
 
             @Override
             public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
                 int swipedPosition = viewHolder.getAdapterPosition();
-
                 FavoritsAdapter adapter = (FavoritsAdapter) mRecyclerViewFavorits.getAdapter();
-//                boolean undoOn = adapter.isUndoOn();
-//                if (undoOn) {
-//                    adapter.pendingRemoval(swipedPosition);
-//                } else {
-                adapter.remove(swipedPosition);
-//                }
 
+                adapter.remove(swipedPosition);
             }
 
             @Override
@@ -271,7 +261,6 @@ public class FavoritsFragment extends android.app.Fragment  {
                 //рисуем красный бэкграунд
                 background.setBounds(itemView.getRight() + (int) dX, itemView.getTop(), itemView.getRight(), itemView.getBottom());
                 background.draw(canvas);
-
                 //рисуем крестик
                 int itemHeight = itemView.getBottom() - itemView.getTop();
                 int intrinsicWidth = xMark.getIntrinsicWidth();
@@ -293,7 +282,6 @@ public class FavoritsFragment extends android.app.Fragment  {
 
     private void setUpAnimationDecoratorHelper() {
         mRecyclerViewFavorits.addItemDecoration(new RecyclerView.ItemDecoration() {
-
             // we want to cache this and not allocate anything repeatedly in the onDraw method
             Drawable background;
             boolean initiated;
@@ -346,7 +334,6 @@ public class FavoritsFragment extends android.app.Fragment  {
                             }
                         }
                     }
-
                     if (lastViewComingDown != null && firstViewComingUp != null) {
                         // views are coming down AND going up to fill the void
                         top = lastViewComingDown.getBottom() + (int) lastViewComingDown.getTranslationY();
@@ -360,7 +347,6 @@ public class FavoritsFragment extends android.app.Fragment  {
                         top = firstViewComingUp.getTop();
                         bottom = firstViewComingUp.getTop() + (int) firstViewComingUp.getTranslationY();
                     }
-
                     background.setBounds(left, top, right, bottom);
                     background.draw(c);
 
@@ -370,6 +356,4 @@ public class FavoritsFragment extends android.app.Fragment  {
 
         });
     }
-
-
 }

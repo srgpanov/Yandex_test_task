@@ -13,6 +13,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class Utils {
+
+    //метод для генерации Id вьюх
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(1);
     public static int generateViewId() {
         for (;;) {
@@ -25,12 +27,14 @@ public class Utils {
             }
         }
     }
-    public static boolean isMoreTwoWords(String text){
+    //метод для словаря проверяющий количество слов в строке
+    public static boolean isMoreFourWords(String text){
         boolean truth =false;
         List<String> strings=Arrays.asList(text.trim().split(" "));
-        if(strings.size()>2)truth =true;
+        if(strings.size()>4)truth =true;
         return truth;
     }
+    //переводим части речи в словаре на русский язык, моно было сделать через параметр в запросе, но переделывать я уже не стал
     public static String translatePos(String text){
         switch (text){
             case "noun": return "сущ";
@@ -47,6 +51,7 @@ public class Utils {
             default:return text;
         }
     }
+    //метод проверяет доступность сети
     public static boolean isNetworkAvailable(Context context){
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();

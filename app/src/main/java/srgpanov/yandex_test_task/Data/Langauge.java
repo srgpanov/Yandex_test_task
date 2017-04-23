@@ -6,7 +6,9 @@ import io.realm.annotations.PrimaryKey;
 /**
  * Created by Пан on 16.04.2017.
  */
-
+/**
+ * Модель для хранения данных доступных языков
+ */
 public class Langauge extends RealmObject {
     @PrimaryKey
     private int Id;

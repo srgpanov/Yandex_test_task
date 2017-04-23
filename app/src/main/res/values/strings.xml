@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">yandex_test_task</string>
+    <string name="app_name">Панов Сергей</string>
     <string name="title_home"></string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
@@ -137,5 +137,17 @@
     <string name="newest_first">Сначала новые</string>
     <string name="speech_synthesis_is_not_supported">Синтез речи не подерживается для выбранного языка</string>
     <string name="send_translate">Отправить перевод через...</string>
+    <string name="err_tr_401">Неправильный API-ключ</string>
+    <string name="err_tr_402">API-ключ заблокирован</string>
+    <string name="err_tr_404">Превышено суточное ограничение на объем переведенного текста</string>
+    <string name="err_tr_413">Превышен максимально допустимый размер текста</string>
+    <string name="err_tr_422">Текст не может быть переведен</string>
+    <string name="err_tr_501">Заданное направление перевода не поддерживается</string>
+    <string name="unknown_error_tr">Что-то пошло не так</string>
+    <string name="err_dict_401">Ключ API невалиден</string>
+    <string name="err_dict_402">Ключ API заблокирован</string>
+    <string name="err_dict_403">Превышено суточное ограничение на количество запросов</string>
+    <string name="err_dict_413">Превышен максимальный размер текста</string>
+    <string name="err_dict_501">Заданное направление перевода не поддерживается</string>
 
 </resources>

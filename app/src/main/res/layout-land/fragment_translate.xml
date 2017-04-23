@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:theme="@style/AppTheme"
-    tools:context="srgpanov.yandex_test_task.MainActivity">
+    tools:context="srgpanov.yandex_test_task.activities.MainActivity">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/appbar_layout_translate"
@@ -88,7 +88,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <srgpanov.yandex_test_task.YandexEditText
+            <srgpanov.yandex_test_task.Utils.YandexEditText
                 android:id="@+id/input_edit_text"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

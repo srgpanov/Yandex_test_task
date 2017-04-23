@@ -1,4 +1,4 @@
-package srgpanov.yandex_test_task;
+package srgpanov.yandex_test_task.adapters;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -15,6 +15,7 @@ import io.realm.RealmChangeListener;
 import io.realm.RealmResults;
 import io.realm.Sort;
 import srgpanov.yandex_test_task.Data.FavoritsWord;
+import srgpanov.yandex_test_task.R;
 
 /**
  * Created by Пан on 30.03.2017.
@@ -38,9 +39,7 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
         mFavoritsWords.addChangeListener(this);
     }
 
-    //    public TranslatedWords getItem(int position) {
-//        return mFavoritsWords.get(position);
-//    }
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_bookmar_history_list, parent, false);
@@ -61,11 +60,6 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
         holder.mDirectionTextView.setText(favoritWord.getDirectionTranslation());
 
     }
-
-//    @Override
-//    public long getItemId(int position) {
-//        return mFavoritsWords.get(position).getId();
-//    }
 
     @Override
     public int getItemCount() {
@@ -101,14 +95,15 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
                 .findAll();
     }
 
+    //метод удаляет элемент избранного
     public void remove(final int position) {
         final int id = mFavoritsWords.get(position).getId();
         mRealm.executeTransactionAsync(new Realm.Transaction() {
             @Override
-            public void execute(Realm realm) {
+            public void execute(Realm realm) {//удаляем в асинхроной транзакции
                 FavoritsWord word = realm.where(FavoritsWord.class).equalTo("Id", id).findFirst();
                 if (word != null) {
-                    if (word.getHistoryWords() != null) {
+                    if (word.getHistoryWords() != null) {//если в истории есть избранное слово, делаем его не избранным
                         word.getHistoryWords().setFavorits(false);
                     }
                     word.deleteFromRealm();
@@ -117,12 +112,13 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
         }, new Realm.Transaction.OnSuccess() {
             @Override
             public void onSuccess() {
-                notifyItemRemoved(position);
+                notifyItemRemoved(position); //обновлем адаптер по завержению удаления
             }
         });
 
     }
 
+    //метод сортировки
     public void sort(boolean increasing) {
         if (increasing) {
             mFavoritsWords = mFavoritsWords.sort("Id", Sort.ASCENDING);
@@ -139,7 +135,7 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
 
         return mFavoritsWords.get(position).getId();
     }
-
+// не стал обновлять адаптер при изменении данных, потому что анимация удаления прерывалась
     @Override
     public void onChange(Object element) {
     }
@@ -167,7 +163,7 @@ public class FavoritsAdapter extends RecyclerView.Adapter<FavoritsAdapter.ViewHo
             mPrimaryTextView.setOnClickListener(this);
             mSecondaryTextView.setOnClickListener(this);
         }
-
+//используем интерфейс для обработки события в фрагменте
         public interface CustomClickListener {
             void onItemClickListener(View view, int position);
         }

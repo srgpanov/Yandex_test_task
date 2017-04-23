@@ -1,4 +1,4 @@
-package srgpanov.yandex_test_task;
+package srgpanov.yandex_test_task.adapters;
 
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -17,6 +17,7 @@ import io.realm.RealmModel;
 import io.realm.RealmResults;
 import io.realm.Sort;
 import srgpanov.yandex_test_task.Data.TranslatedWords;
+import srgpanov.yandex_test_task.R;
 
 /**
  * Created by Пан on 30.03.2017.

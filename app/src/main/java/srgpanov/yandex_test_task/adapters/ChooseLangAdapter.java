@@ -1,4 +1,4 @@
-package srgpanov.yandex_test_task;
+package srgpanov.yandex_test_task.adapters;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -10,11 +10,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import srgpanov.yandex_test_task.Data.Langauge;
+import srgpanov.yandex_test_task.R;
 
 /**
  * Created by Пан on 04.04.2017.
  */
 
+/**
+ * адаптер для активити выбора языка
+ * отображает языки и категори (недаввно использованные)
+ */
 public class ChooseLangAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private List<Object> mItems;
@@ -132,7 +137,7 @@ public class ChooseLangAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         @Override
         public void onClick(View view) {
             if (mListener != null) {
-                mListener.onLangClickListener(view, getAdapterPosition());
+                mListener.onLangClickListener(view, getAdapterPosition()); //используем кастомный листенер для обработки событий в активити
             }
         }
     }

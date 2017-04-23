@@ -8,6 +8,9 @@ import java.util.List;
 /**
  * Created by Пан on 10.04.2017.
  */
+/**
+ * ответ который приходит от АПИ словаря
+ */
 
 public class LookUpResponse {
     @SerializedName("head")

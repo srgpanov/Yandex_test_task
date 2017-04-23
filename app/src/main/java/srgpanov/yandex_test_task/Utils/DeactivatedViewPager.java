@@ -1,4 +1,4 @@
-package srgpanov.yandex_test_task;
+package srgpanov.yandex_test_task.Utils;
 
 import android.content.Context;
 import android.support.v4.view.ViewPager;
@@ -8,7 +8,7 @@ import android.view.MotionEvent;
 /**
  * Created by Пан on 21.04.2017.
  */
-
+//ВьюПэджер с отключенными свайпами
 public class DeactivatedViewPager extends ViewPager {
 
     private boolean swipeLocked =true;

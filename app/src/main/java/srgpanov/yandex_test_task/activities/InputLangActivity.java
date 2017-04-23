@@ -1,4 +1,4 @@
-package srgpanov.yandex_test_task;
+package srgpanov.yandex_test_task.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,8 +14,13 @@ import java.util.ArrayList;
 
 import io.realm.Realm;
 import io.realm.RealmResults;
+import srgpanov.yandex_test_task.adapters.ChooseLangAdapter;
 import srgpanov.yandex_test_task.Data.Langauge;
+import srgpanov.yandex_test_task.R;
 
+/**
+ * активити для выбора языка
+ */
 public class InputLangActivity extends AppCompatActivity {
     private RecyclerView mLangRecyclerView;
     private ChooseLangAdapter mAdapter;
@@ -46,6 +51,7 @@ public class InputLangActivity extends AppCompatActivity {
             public void onLangClickListener(View view, int position) {
                 switch (view.getId()) {
                     case R.id.choose_lang_text_view:
+                        //при выборе языка помечаем его как недавно испольованный
                         final Langauge choosenLang = (Langauge) finalLang.get(position);
                         mRealm.executeTransaction(new Realm.Transaction() {
                             @Override
@@ -76,7 +82,7 @@ public class InputLangActivity extends AppCompatActivity {
 
         mLangRecyclerView.setAdapter(mAdapter);
     }
-
+//делаем активной кнопку назад в тулбаре
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -86,7 +92,7 @@ public class InputLangActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-
+//создаём Лист объектов для адаптера, ложим в него 3 последних использованных языка и все языки
     private ArrayList<Object> getListForLangAdapter() {
         ArrayList<Object> items = new ArrayList<>();
         Number currentIdNum = mRealm.where(Langauge.class).max("lastUsage");

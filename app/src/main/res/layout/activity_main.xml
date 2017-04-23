@@ -6,17 +6,18 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:theme="@style/AppTheme"
-    tools:context="srgpanov.yandex_test_task.MainActivity">
+    tools:context="srgpanov.yandex_test_task.activities.MainActivity">
 
-    <srgpanov.yandex_test_task.DeactivatedViewPager
+    <srgpanov.yandex_test_task.Utils.DeactivatedViewPager
         android:id="@+id/view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/navigation"
         android:layout_alignParentTop="true"
-        >
+        android:layout_alignRight="@+id/navigation"
+        android:layout_alignEnd="@+id/navigation"
+        android:layout_above="@id/navigation">
 
-    </srgpanov.yandex_test_task.DeactivatedViewPager>
+    </srgpanov.yandex_test_task.Utils.DeactivatedViewPager>
 
 
     <android.support.design.widget.BottomNavigationView
