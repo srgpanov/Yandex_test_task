@@ -50,9 +50,7 @@ public class HistoryFragment extends android.app.Fragment {
         super.onCreate(savedInstanceState);
         mPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
     }
-private  void  gettr(){
 
-}
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
